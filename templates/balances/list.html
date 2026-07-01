@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Agent ostatka{% endblock %}
+{% block breadcrumb %}Agentlar / Ostatka — {{ today|date:"d.m.Y" }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'agent_balance_create' %}" class="btn btn-primary"><i class="ti ti-plus"></i> Ostatka kiritish</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <table class="table-base">
+    <thead>
+      <tr><th>Agent</th><th>Berildi</th><th>Qaytarildi</th><th>Qoldi</th><th>Izoh</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for b in balances %}
+      <tr>
+        <td>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="avatar">{{ b.agent.first_name|slice:":1"|upper }}{{ b.agent.last_name|slice:":1"|upper }}</div>
+            <a href="{% url 'agent_detail' b.agent.pk %}" style="color:#534AB7; text-decoration:none; font-weight:500;">
+              {{ b.agent }}
+            </a>
+          </div>
+        </td>
+        <td>{{ b.given_amount|floatformat:0 }}</td>
+        <td>{{ b.returned_amount|floatformat:0 }}</td>
+        <td style="font-weight:600; color:#534AB7;">{{ b.remaining|floatformat:0 }}</td>
+        <td style="color:#888; font-size:12px;">{{ b.note|default:"—" }}</td>
+        <td><a href="{% url 'agent_balance_update' b.pk %}" class="btn btn-sm"><i class="ti ti-edit"></i></a></td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" style="text-align:center; color:#aaa; padding:32px;">
+          Bugun hali ostatka kiritilmagan
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

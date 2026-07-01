@@ -1,0 +1,25 @@
+{% comment %}
+Usage:
+{% include "partials/page_header.html" with
+   title="Nakladnoylar"
+   subtitle="Barcha buyurtmalar ro'yxati"
+   btn_label="Yangi nakladnoy"
+   btn_url="order_create"
+%}
+{% endcomment %}
+
+<div class="flex items-start justify-between mb-6">
+  <div>
+    <h1 class="text-base font-semibold text-slate-800">{{ title }}</h1>
+    {% if subtitle %}
+      <p class="text-xs text-slate-400 mt-0.5">{{ subtitle }}</p>
+    {% endif %}
+  </div>
+  {% if btn_label and btn_url %}
+    <a href="{% url btn_url %}"
+       class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition-colors flex-shrink-0">
+      <i class="ti ti-plus text-sm"></i>
+      {{ btn_label }}
+    </a>
+  {% endif %}
+</div>

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Mijozlar{% endblock %}
+{% block breadcrumb %}Mijozlar{% endblock %}
+{% block topbar_actions %}
+    <a href="{% url 'cliente_export_excel' %}?{{ request.GET.urlencode }}" class="btn">
+        <i class="ti ti-file-spreadsheet"></i> Excel
+    </a>
+    <a href="{% url 'cliente_export_pdf' %}?{{ request.GET.urlencode }}" class="btn">
+        <i class="ti ti-file-type-pdf"></i> PDF
+    </a>
+    <a href="{% url 'cliente_create' %}" class="btn btn-primary"><i class="ti ti-plus"></i> Mijoz qo'shish</a>
+{% endblock %}
+
+{% block content %}
+    <div style="margin-bottom:16px;">
+        <form method="get" style="display:flex; gap:10px;">
+            <input type="text" name="q" value="{{ q }}" placeholder="Ism, firma, alternativ nom, telefon..."
+                   class="form-control" style="width:300px;">
+            <button type="submit" class="btn btn-primary"><i class="ti ti-search"></i> Qidirish</button>
+            {% if q %}<a href="{% url 'cliente_list' %}" class="btn">Tozalash</a>{% endif %}
+        </form>
+    </div>
+
+    <div class="card">
+        <table class="table-base">
+            <thead>
+            <tr>
+                <th>Mijoz</th>
+                <th>Firma</th>
+                <th>Alternativ nom</th>
+                <th>Telefon</th>
+                <th>Agent</th>
+                <th>Holat</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for c in clientes %}
+                <tr>
+                    <td>
+                        <a href="{% url 'cliente_detail' c.pk %}"
+                           style="color:#534AB7; text-decoration:none; font-weight:500;">
+                            {{ c.first_name }} {{ c.last_name }}
+                        </a>
+                    </td>
+                    <td>{{ c.firma_name|default:"—" }}</td>
+                    <td style="color:#888;">{{ c.alternative_name|default:"—" }}</td>
+                    <td style="color:#888;">{{ c.phone|default:"—" }}</td>
+                    <td>{{ c.agent|default:"—" }}</td>
+                    <td>
+                        {% if c.is_active %}<span class="badge badge-green">Faol</span>
+                        {% else %}<span class="badge badge-red">Nofaol</span>{% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:4px;">
+                            <a href="{% url 'cliente_detail' c.pk %}" class="btn btn-sm"><i class="ti ti-eye"></i></a>
+                            <a href="{% url 'cliente_update' c.pk %}" class="btn btn-sm"><i class="ti ti-edit"></i></a>
+                            <a href="{% url 'cliente_delete' c.pk %}" class="btn btn-sm btn-danger"><i
+                                    class="ti ti-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align:center; color:#aaa; padding:32px;">Mijoz topilmadi</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

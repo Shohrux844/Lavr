@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Agentlar{% endblock %}
+{% block breadcrumb %}Agentlar{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'agent_create' %}" class="btn btn-primary"><i class="ti ti-plus"></i> Agent qo'shish</a>
+{% endblock %}
+{% block content %}
+<div class="card">
+  <table class="table-base">
+    <thead>
+      <tr><th>Agent</th><th>Telefon</th><th>Stavka</th><th>Jami sotish</th><th>Nakladnoylar</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for a in agents %}
+      <tr>
+        <td>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="avatar">{{ a.first_name|slice:":1"|upper }}{{ a.last_name|slice:":1"|upper }}</div>
+            <div>
+              <div style="font-weight:500;">{{ a }}</div>
+              <div style="font-size:12px; color:#888;">{{ a.address }}</div>
+            </div>
+          </div>
+        </td>
+        <td style="color:#888;">{{ a.phone }}</td>
+        <td><span class="badge badge-purple">{{ a.commission_rate }}%</span></td>
+        <td style="font-weight:500;">{{ a.total_sales|default:0|floatformat:0 }} so'm</td>
+        <td><span class="badge badge-blue">{{ a.order_count }} ta</span></td>
+        <td>
+          <div style="display:flex; gap:4px;">
+            <a href="{% url 'agent_detail' a.pk %}" class="btn btn-sm"><i class="ti ti-eye"></i></a>
+            <a href="{% url 'agent_update' a.pk %}" class="btn btn-sm"><i class="ti ti-edit"></i></a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center; color:#aaa; padding:32px;">Agent topilmadi</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

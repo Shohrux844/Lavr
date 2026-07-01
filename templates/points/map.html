@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Xarita — AZS/Do'konlar{% endblock %}
+{% block breadcrumb %}Nuqtalar / Xarita{% endblock %}
+{% block topbar_actions %}
+    <a href="{% url 'point_list' %}" class="btn"><i class="ti ti-list"></i> Ro'yxat</a>
+    <a href="{% url 'point_create' %}" class="btn"><i class="ti ti-plus"></i> Nuqta qo'shish</a>
+    <a href="{% url 'visit_create' %}" class="btn btn-primary"><i class="ti ti-map-pin-check"></i> Tashrif belgilash</a>
+{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
+    <style>
+        #map {
+            height: 560px;
+            border-radius: 12px;
+            border: 1px solid #EBEBEB;
+        }
+
+        .leaflet-popup-content {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div style="display:flex; gap:16px; align-items:center; margin-bottom:12px;">
+  <span style="font-size:13px; color:#888;">
+    <span class="legend-dot" style="background:#3B6D11;"></span> Shartnoma bor
+  </span>
+        <span style="font-size:13px; color:#888;">
+    <span class="legend-dot" style="background:#A32D2D;"></span> Shartnoma yo'q (yangi)
+  </span>
+    </div>
+
+    <div id="map"></div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script>
+        const points = {{ points_json|safe }};
+
+        // Toshkent markazi default — agar nuqtalar bo'lmasa
+        const map = L.map('map').setView([41.311081, 69.279737], 11);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19,
+        }).addTo(map);
+
+        const bounds = [];
+
+        points.forEach(p => {
+            if (!p.lat || !p.lng) return;
+            const color = p.has_contract ? '#3B6D11' : '#A32D2D';
+            const marker = L.circleMarker([p.lat, p.lng], {
+                radius: 9,
+                fillColor: color,
+                color: '#fff',
+                weight: 2,
+                fillOpacity: 0.9,
+            }).addTo(map);
+
+            let popupHtml = `<b>${p.name}</b><br>${p.kind}<br>`;
+            if (p.has_contract) {
+                popupHtml += `Mijoz: ${p.cliente}<br>`;
+                popupHtml += `Qarz: <b style="color:${p.debt > 0 ? '#A32D2D' : '#3B6D11'}">${p.debt.toLocaleString()} so'm</b>`;
+            } else {
+                popupHtml += `<span style="color:#A32D2D;">Shartnoma yo'q</span>`;
+            }
+            if (p.address) popupHtml += `<br><span style="color:#888;">${p.address}</span>`;
+
+            marker.bindPopup(popupHtml);
+            bounds.push([p.lat, p.lng]);
+        });
+
+        if (bounds.length > 0) {
+            map.fitBounds(bounds, {padding: [40, 40]});
+        }
+    </script>
+{% endblock %}

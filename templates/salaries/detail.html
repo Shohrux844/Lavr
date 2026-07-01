@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ salary.agent }} — Maosh{% endblock %}
+{% block breadcrumb %}
+  <a href="{% url 'salary_list' %}" style="color:#aaa;text-decoration:none;">Maosh</a> / {{ salary.agent }} — {{ salary.month|date:"M Y" }}
+{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'salary_update' salary.pk %}" class="btn"><i class="ti ti-edit"></i> Tahrirlash</a>
+  {% if salary.status != 'paid' %}
+  <form method="post" action="{% url 'salary_mark_paid' salary.pk %}" style="display:inline;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary"><i class="ti ti-check"></i> To'landi deb belgilash</button>
+  </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="max-width:640px;">
+  <div class="card" style="padding:28px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+      <div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+          <div class="avatar" style="width:36px; height:36px; font-size:13px;">
+            {{ salary.agent.first_name|slice:":1"|upper }}{{ salary.agent.last_name|slice:":1"|upper }}
+          </div>
+          <span style="font-size:17px; font-weight:600;">{{ salary.agent }}</span>
+        </div>
+        <div style="font-size:13px; color:#888;">{{ salary.month|date:"F Y" }} oyi uchun maosh</div>
+      </div>
+      {% if salary.status == 'paid' %}
+        <span class="badge badge-green" style="font-size:13px; padding:5px 12px;">To'landi</span>
+      {% else %}
+        <span class="badge badge-amber" style="font-size:13px; padding:5px 12px;">Kutilmoqda</span>
+      {% endif %}
+    </div>
+
+    <hr class="divider">
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:13px;">
+      <div>
+        <div style="color:#888; margin-bottom:2px;">Jami sotuv</div>
+        <div style="font-weight:600; font-size:15px;">{{ salary.total_sales|floatformat:0 }} so'm</div>
+      </div>
+      <div>
+        <div style="color:#888; margin-bottom:2px;">Komissiya stavkasi</div>
+        <div style="font-weight:600; font-size:15px;">{{ salary.commission_rate }}%</div>
+      </div>
+      <div>
+        <div style="color:#888; margin-bottom:2px;">Komissiya summasi</div>
+        <div style="font-weight:600; font-size:15px;">{{ salary.commission_amount|floatformat:0 }} so'm</div>
+      </div>
+      <div>
+        <div style="color:#888; margin-bottom:2px;">Bonus</div>
+        <div style="font-weight:600; font-size:15px;">{{ salary.bonus|floatformat:0 }} so'm</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:15px; font-weight:600;">Jami maosh</span>
+      <span style="font-size:22px; font-weight:700; color:#534AB7;">{{ salary.total_salary|floatformat:0 }} so'm</span>
+    </div>
+
+    {% if salary.date_paid %}
+    <div style="font-size:12px; color:#888; margin-top:8px;">To'langan sana: {{ salary.date_paid|date:"d.m.Y" }}</div>
+    {% endif %}
+
+    {% if salary.note %}
+    <hr class="divider">
+    <div style="font-size:12px; color:#888; margin-bottom:4px;">Izoh</div>
+    <div style="font-size:13px;">{{ salary.note }}</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

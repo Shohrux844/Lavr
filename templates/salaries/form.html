@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Maosh tahrirlash{% endblock %}
+{% block breadcrumb %}<a href="{% url 'salary_list' %}" style="color:#aaa;text-decoration:none;">Maosh</a> / Tahrirlash{% endblock %}
+{% block content %}
+<div style="max-width:560px;">
+  <div class="card" style="padding:24px;">
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="submit" class="btn btn-primary"><i class="ti ti-check"></i> Saqlash</button>
+        <a href="{% url 'salary_list' %}" class="btn">Bekor qilish</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

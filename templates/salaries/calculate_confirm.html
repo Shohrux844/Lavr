@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Maoshni hisoblash{% endblock %}
+{% block breadcrumb %}<a href="{% url 'salary_list' %}" style="color:#aaa;text-decoration:none;">Maosh</a> / Hisoblash{% endblock %}
+
+{% block content %}
+<div style="max-width:460px; margin:0 auto;">
+  <div class="card" style="padding:28px; text-align:center;">
+    <div style="width:56px; height:56px; border-radius:50%; background:#EEEDFE; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+      <i class="ti ti-calculator" style="font-size:24px; color:#534AB7;"></i>
+    </div>
+    <h2 style="font-size:16px; font-weight:600; margin-bottom:8px;">Joriy oy maoshini hisoblash</h2>
+    <p style="font-size:13px; color:#888; margin-bottom:24px;">
+      Barcha faol agentlar uchun joriy oydagi sotuvlar asosida maosh avtomatik hisoblanadi.
+      Agar shu oy uchun hisob allaqachon mavjud bo'lsa, u yangilanadi.
+    </p>
+    <div style="display:flex; gap:10px; justify-content:center;">
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary"><i class="ti ti-check"></i> Ha, hisoblash</button>
+      </form>
+      <a href="{% url 'salary_list' %}" class="btn">Bekor qilish</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

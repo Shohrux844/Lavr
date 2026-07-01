@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block breadcrumb %}
+  <a href="{% url 'order_detail' order.pk %}" style="color:#aaa;text-decoration:none;">{{ order.number }}</a> / To'lov
+{% endblock %}
+
+{% block content %}
+<div style="max-width:560px;">
+
+  <!-- Nakladnoy qisqacha info -->
+  <div class="card" style="padding:16px 20px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <div style="font-size:13px; color:#888;">Nakladnoy</div>
+      <div style="font-size:15px; font-weight:600;">{{ order.number }}</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:13px; color:#888;">Jami summa</div>
+      <div style="font-size:15px; font-weight:600;">{{ order.total_sum|floatformat:0 }} so'm</div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:24px;">
+    <h2 style="font-size:16px; font-weight:600; margin-bottom:20px;">{{ title }}</h2>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+        {% if field.name == 'screenshot' %}
+        <div style="font-size:11px; color:#aaa; margin-top:3px;">Bank o'tkazmasi bo'lsa skrinshot yuklang</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <button type="submit" class="btn btn-primary"><i class="ti ti-check"></i> Saqlash</button>
+        <a href="{% url 'order_detail' order.pk %}" class="btn">Bekor qilish</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}To'lovlar{% endblock %}
+{% block breadcrumb %}To'lovlar / Perechesleniyalar{% endblock %}
+
+{% block topbar_actions %}
+    <a href="{% url 'payment_export_excel' %}?{{ request.GET.urlencode }}" class="btn">
+        <i class="ti ti-file-spreadsheet"></i> Excel
+    </a>
+    <a href="{% url 'payment_export_pdf' %}?{{ request.GET.urlencode }}" class="btn">
+        <i class="ti ti-file-type-pdf"></i> PDF
+    </a>
+{% endblock %}
+
+{% block content %}
+    <div class="card" style="padding:14px 16px; margin-bottom:16px;">
+        <form method="get" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+            <div>
+                <label class="form-label">Qidirish</label>
+                <input type="text" name="q" value="{{ q }}" placeholder="Mijoz, firma, alternativ nom, nakladnoy..."
+                       class="form-control" style="width:260px;">
+            </div>
+            <div>
+                <label class="form-label">Turi</label>
+                <select name="method" class="form-control" style="width:150px;">
+                    <option value="">Hammasi</option>
+                    {% for val, label in method_choices %}
+                        <option value="{{ val }}" {% if method_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Holat</label>
+                <select name="confirmed" class="form-control" style="width:150px;">
+                    <option value="">Hammasi</option>
+                    <option value="1" {% if confirmed_filter == '1' %}selected{% endif %}>Tasdiqlangan</option>
+                    <option value="0" {% if confirmed_filter == '0' %}selected{% endif %}>Kutilmoqda</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Dan</label>
+                <input type="date" name="date_from" value="{{ date_from }}" class="form-control" style="width:150px;">
+            </div>
+            <div>
+                <label class="form-label">Gacha</label>
+                <input type="date" name="date_to" value="{{ date_to }}" class="form-control" style="width:150px;">
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="ti ti-search"></i> Qidirish</button>
+            {% if q or method_filter or confirmed_filter or date_from or date_to %}
+                <a href="{% url 'payment_list' %}" class="btn">Tozalash</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="stat-card" style="margin-bottom:16px; display:inline-block;">
+        <div class="stat-label">Jami summa (filterlangan)</div>
+        <div class="stat-val">{{ total_amount|floatformat:0 }} so'm</div>
+    </div>
+
+    <div class="card">
+        <div style="overflow-x:auto;">
+            <table class="table-base">
+                <thead>
+                <tr>
+                    <th>Sana</th>
+                    <th>Nakladnoy</th>
+                    <th>Mijoz</th>
+                    <th>Alternativ nom</th>
+                    <th>Agent</th>
+                    <th>Summa</th>
+                    <th>Turi</th>
+                    <th>Holat</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for p in payments %}
+                    <tr>
+                        <td style="color:#888; font-size:12px;">{{ p.date_created|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'order_detail' p.order.pk %}"
+                               style="color:#534AB7; text-decoration:none; font-weight:500;">
+                                {{ p.order.number }}
+                            </a>
+                        </td>
+                        <td>{{ p.order.cliente }}</td>
+                        <td style="color:#888;">{{ p.order.cliente.alternative_name|default:"—" }}</td>
+                        <td>{{ p.order.agent }}</td>
+                        <td style="font-weight:500;">{{ p.amount|floatformat:0 }}</td>
+                        <td>
+                            {% if p.method == 'cash' %}<span class="badge badge-green">Naqd</span>
+                            {% else %}<span class="badge badge-blue">Bank</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if p.confirmed %}<span class="badge badge-green">Tasdiqlangan</span>
+                            {% else %}<span class="badge badge-amber">Kutilmoqda</span>{% endif %}
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:4px;">
+                                {% if not p.confirmed %}
+                                    <form method="post" action="{% url 'payment_confirm' p.pk %}"
+                                          style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm"
+                                                style="background:#EAF3DE; color:#3B6D11; border-color:#C0DD97; cursor:pointer;">
+                                            Tasdiqlash
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                {% if p.screenshot %}
+                                    <a href="{{ p.screenshot.url }}" target="_blank" class="btn btn-sm"><i
+                                            class="ti ti-photo"></i></a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="9" style="text-align:center; color:#aaa; padding:32px;">To'lov topilmadi</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

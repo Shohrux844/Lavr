@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — SavdoTizim{% endblock %}
+
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block topbar_actions %}
+    <a href="{% url 'order_create' %}" class="btn btn-primary">
+        <i class="ti ti-plus"></i> Yangi nakladnoy
+    </a>
+{% endblock %}
+
+{% block content %}
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- BUGUNGI TEZKOR STATISTIKA (o'zgarmagan)       -->
+    <!-- ════════════════════════════════════════════ -->
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px;">
+        <div class="stat-card">
+            <div class="stat-label"><i class="ti ti-file-invoice" style="font-size:13px;"></i> Bugungi nakladnoylar
+            </div>
+            <div class="stat-val">{{ today_orders_count }}</div>
+            <div style="margin-top:6px;"><span class="badge badge-blue">Bugun</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label"><i class="ti ti-credit-card" style="font-size:13px;"></i> Tushgan pullar</div>
+            <div class="stat-val">{{ total_income_today|floatformat:0 }}</div>
+            <div style="margin-top:6px;"><span class="badge badge-green">So'm</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label"><i class="ti ti-package" style="font-size:13px;"></i> Sklad ogohlantirish</div>
+            <div class="stat-val">{{ low_stock_count }}</div>
+            <div style="margin-top:6px;"><span class="badge badge-amber">Tovar</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label"><i class="ti ti-users" style="font-size:13px;"></i> Faol agentlar</div>
+            <div class="stat-val">{{ active_agents }}</div>
+            <div style="margin-top:6px;"><span class="badge badge-purple">Faol</span></div>
+        </div>
+    </div>
+
+    <!-- Sklad ogohlantirishlari -->
+    {% if out_of_stock %}
+        {% for p in out_of_stock %}
+            <div class="alert alert-error">
+                <i class="ti ti-circle-x" style="font-size:16px;flex-shrink:0;margin-top:1px;"></i>
+                <span><b>{{ p.name }}</b> ({{ p.sku }}) — skladda tugagan!</span>
+                <a href="{% url 'product_update' p.pk %}" class="btn btn-sm" style="margin-left:auto;">Yangilash</a>
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% if low_stock_products %}
+        {% for p in low_stock_products %}
+            <div class="alert alert-warning">
+                <i class="ti ti-alert-triangle" style="font-size:16px;flex-shrink:0;margin-top:1px;"></i>
+                <span><b>{{ p.name }}</b> — {{ p.stock }} dona qoldi</span>
+                <a href="{% url 'product_update' p.pk %}" class="btn btn-sm" style="margin-left:auto;">Yangilash</a>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- DAVR FILTRI: tezkor tugmalar + qo'lda sana    -->
+    <!-- ════════════════════════════════════════════ -->
+    <div class="card" style="padding:16px; margin-bottom:16px; margin-top:8px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span style="font-size:14px; font-weight:600;">Savdo statistikasi — davr bo'yicha</span>
+        </div>
+
+        <form method="get" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+            <!-- Tezkor tugmalar -->
+            <div style="display:flex; gap:6px;">
+                <a href="?period=today" class="btn btn-sm {% if period == 'today' %}btn-primary{% endif %}">Bugun</a>
+                <a href="?period=week" class="btn btn-sm {% if period == 'week' %}btn-primary{% endif %}">Bu hafta</a>
+                <a href="?period=month" class="btn btn-sm {% if period == 'month' %}btn-primary{% endif %}">Bu oy</a>
+                <a href="?period=year" class="btn btn-sm {% if period == 'year' %}btn-primary{% endif %}">Bu yil</a>
+            </div>
+
+            <div style="width:1px; height:32px; background:#EBEBEB; margin:0 4px;"></div>
+
+            <div>
+                <label class="form-label">Dan</label>
+                <input type="date" name="date_from" value="{{ date_from }}" class="form-control" style="width:150px;">
+            </div>
+            <div>
+                <label class="form-label">Gacha</label>
+                <input type="date" name="date_to" value="{{ date_to }}" class="form-control" style="width:150px;">
+            </div>
+            <div>
+                <label class="form-label">Firma</label>
+                <select name="firma" class="form-control" style="width:180px;">
+                    <option value="">Barcha firmalar</option>
+                    {% for f in firma_list %}
+                        <option value="{{ f }}" {% if firma == f %}selected{% endif %}>{{ f }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="ti ti-filter"></i> Qo'llash</button>
+        </form>
+
+        <hr class="divider">
+
+        <!-- Davr statistikasi natijasi -->
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
+            <div class="stat-card">
+                <div class="stat-label">Nakladnoylar soni</div>
+                <div class="stat-val">{{ period_stats.orders_count }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Umumiy savdo</div>
+                <div class="stat-val">{{ period_stats.total_sales|floatformat:0 }}</div>
+                <span class="badge badge-blue" style="margin-top:4px;">so'm</span>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Yig'ilgan pul</div>
+                <div class="stat-val" style="color:#3B6D11;">{{ period_stats.total_collected|floatformat:0 }}</div>
+                <span class="badge badge-green" style="margin-top:4px;">so'm</span>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Qolgan qarz</div>
+                <div class="stat-val"
+                     style="color:{% if period_stats.total_debt > 0 %}#A32D2D{% else %}#3B6D11{% endif %};">
+                    {{ period_stats.total_debt|floatformat:0 }}
+                </div>
+                <span class="badge {% if period_stats.total_debt > 0 %}badge-red{% else %}badge-green{% endif %}"
+                      style="margin-top:4px;">so'm</span>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- AGENTLAR VA MIJOZLAR STATISTIKASI             -->
+    <!-- ════════════════════════════════════════════ -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+
+        <!-- Agentlar savdo + komissiya -->
+        <div class="card">
+            <div style="padding:14px 16px; border-bottom:1px solid #EBEBEB; font-size:14px; font-weight:500;">
+                Agentlar — savdo va komissiya (tanlangan davrda)
+            </div>
+            <table class="table-base">
+                <thead>
+                <tr>
+                    <th>Agent</th>
+                    <th>Savdo</th>
+                    <th>Stavka</th>
+                    <th>Komissiya</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for s in agent_stats %}
+                    <tr>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div class="avatar">
+                                    {{ s.agent.first_name|slice:":1"|upper }}{{ s.agent.last_name|slice:":1"|upper }}</div>
+                                <a href="{% url 'agent_detail' s.agent.pk %}"
+                                   style="color:#534AB7; text-decoration:none; font-weight:500;">{{ s.agent }}</a>
+                            </div>
+                        </td>
+                        <td style="font-weight:500;">{{ s.sales|floatformat:0 }}</td>
+                        <td><span class="badge badge-purple">{{ s.commission_rate }}%</span></td>
+                        <td style="font-weight:600; color:#534AB7;">{{ s.commission|floatformat:0 }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align:center; color:#aaa; padding:24px;">Bu davrda savdo yo'q</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mijozlar to'lov + qarz -->
+        <div class="card">
+            <div style="padding:14px 16px; border-bottom:1px solid #EBEBEB; font-size:14px; font-weight:500;">
+                Mijozlar — to'lov va qarz (tanlangan davrda)
+            </div>
+            <table class="table-base">
+                <thead>
+                <tr>
+                    <th>Mijoz</th>
+                    <th>Savdo</th>
+                    <th>To'lagan</th>
+                    <th>Qarz</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for s in cliente_stats %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'cliente_detail' s.cliente.pk %}"
+                               style="color:#534AB7; text-decoration:none; font-weight:500;">
+                                {{ s.cliente }}
+                            </a>
+                            {% if s.cliente.firma_name %}
+                                <div style="font-size:11px; color:#aaa;">{{ s.cliente.firma_name }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ s.total_sales|floatformat:0 }}</td>
+                        <td style="color:#3B6D11;">{{ s.total_paid|floatformat:0 }}</td>
+                        <td style="font-weight:600; color:{% if s.debt > 0 %}#A32D2D{% else %}#3B6D11{% endif %};">
+                            {{ s.debt|floatformat:0 }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align:center; color:#aaa; padding:24px;">Bu davrda savdo yo'q</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- IKKI DAVRNI SOLISHTIRISH                      -->
+    <!-- ════════════════════════════════════════════ -->
+    <div class="card" style="padding:16px; margin-bottom:16px;">
+        <div style="font-size:14px; font-weight:600; margin-bottom:12px;">
+            <i class="ti ti-chart-bar" style="font-size:15px;"></i> Ikki davrni solishtirish
+        </div>
+
+        <form method="get" style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end;">
+            <!-- 1-davr -->
+            <div style="display:flex; gap:8px; align-items:flex-end;">
+                <div>
+                    <label class="form-label">1-davr — dan</label>
+                    <input type="date" name="cmp1_date_from" value="{{ cmp1_from }}" class="form-control"
+                           style="width:150px;">
+                </div>
+                <div>
+                    <label class="form-label">1-davr — gacha</label>
+                    <input type="date" name="cmp1_date_to" value="{{ cmp1_to }}" class="form-control"
+                           style="width:150px;">
+                </div>
+            </div>
+
+            <div style="font-size:13px; color:#aaa; padding-bottom:8px;">solishtirish</div>
+
+            <!-- 2-davr -->
+            <div style="display:flex; gap:8px; align-items:flex-end;">
+                <div>
+                    <label class="form-label">2-davr — dan</label>
+                    <input type="date" name="cmp2_date_from" value="{{ cmp2_from }}" class="form-control"
+                           style="width:150px;">
+                </div>
+                <div>
+                    <label class="form-label">2-davr — gacha</label>
+                    <input type="date" name="cmp2_date_to" value="{{ cmp2_to }}" class="form-control"
+                           style="width:150px;">
+                </div>
+            </div>
+
+            <!-- Joriy filtrlarni saqlab qolish uchun -->
+            <input type="hidden" name="period" value="{{ period }}">
+            <input type="hidden" name="date_from" value="{{ date_from }}">
+            <input type="hidden" name="date_to" value="{{ date_to }}">
+            <input type="hidden" name="firma" value="{{ firma }}">
+
+            <button type="submit" class="btn btn-primary"><i class="ti ti-arrows-left-right"></i> Solishtirish</button>
+        </form>
+
+        {% if comparison %}
+            <hr class="divider">
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:16px;">
+                <div style="font-size:12px; color:#888;">
+                    <b>1-davr:</b> {{ comparison.period1.date_from }} — {{ comparison.period1.date_to }}
+                </div>
+                <div style="font-size:12px; color:#888;">
+                    <b>2-davr:</b> {{ comparison.period2.date_from }} — {{ comparison.period2.date_to }}
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
+
+                <!-- Savdo o'zgarishi -->
+                <div class="stat-card">
+                    <div class="stat-label">Umumiy savdo</div>
+                    <div style="font-size:12px; color:#aaa; margin-bottom:4px;">
+                        {{ comparison.period1.total_sales|floatformat:0 }}
+                        → {{ comparison.period2.total_sales|floatformat:0 }}
+                    </div>
+                    {% if comparison.sales_change is not None %}
+                        <div class="stat-val"
+                             style="font-size:18px; color:{% if comparison.sales_change >= 0 %}#3B6D11{% else %}#A32D2D{% endif %};">
+                            {% if comparison.sales_change >= 0 %}<i class="ti ti-trending-up"></i>+{% else %}
+                                <i class="ti ti-trending-down"></i>{% endif %}{{ comparison.sales_change }}%
+                        </div>
+                    {% else %}
+                        <div class="stat-val" style="font-size:14px; color:#aaa;">—</div>
+                    {% endif %}
+                </div>
+
+                <!-- Yig'ilgan pul o'zgarishi -->
+                <div class="stat-card">
+                    <div class="stat-label">Yig'ilgan pul</div>
+                    <div style="font-size:12px; color:#aaa; margin-bottom:4px;">
+                        {{ comparison.period1.total_collected|floatformat:0 }}
+                        → {{ comparison.period2.total_collected|floatformat:0 }}
+                    </div>
+                    {% if comparison.collected_change is not None %}
+                        <div class="stat-val"
+                             style="font-size:18px; color:{% if comparison.collected_change >= 0 %}#3B6D11{% else %}#A32D2D{% endif %};">
+                            {% if comparison.collected_change >= 0 %}<i class="ti ti-trending-up"></i>+{% else %}
+                                <i class="ti ti-trending-down"></i>{% endif %}{{ comparison.collected_change }}%
+                        </div>
+                    {% else %}
+                        <div class="stat-val" style="font-size:14px; color:#aaa;">—</div>
+                    {% endif %}
+                </div>
+
+                <!-- Qarz o'zgarishi -->
+                <div class="stat-card">
+                    <div class="stat-label">Qolgan qarz</div>
+                    <div style="font-size:12px; color:#aaa; margin-bottom:4px;">
+                        {{ comparison.period1.total_debt|floatformat:0 }}
+                        → {{ comparison.period2.total_debt|floatformat:0 }}
+                    </div>
+                    {% if comparison.debt_change is not None %}
+                        <div class="stat-val"
+                             style="font-size:18px; color:{% if comparison.debt_change <= 0 %}#3B6D11{% else %}#A32D2D{% endif %};">
+                            {% if comparison.debt_change >= 0 %}<i class="ti ti-trending-up"></i>+{% else %}
+                                <i class="ti ti-trending-down"></i>{% endif %}{{ comparison.debt_change }}%
+                        </div>
+                    {% else %}
+                        <div class="stat-val" style="font-size:14px; color:#aaa;">—</div>
+                    {% endif %}
+                </div>
+
+                <!-- Nakladnoylar soni o'zgarishi -->
+                <div class="stat-card">
+                    <div class="stat-label">Nakladnoylar soni</div>
+                    <div style="font-size:12px; color:#aaa; margin-bottom:4px;">
+                        {{ comparison.period1.orders_count }} → {{ comparison.period2.orders_count }}
+                    </div>
+                    {% if comparison.orders_change is not None %}
+                        <div class="stat-val"
+                             style="font-size:18px; color:{% if comparison.orders_change >= 0 %}#3B6D11{% else %}#A32D2D{% endif %};">
+                            {% if comparison.orders_change >= 0 %}<i class="ti ti-trending-up"></i>+{% else %}
+                                <i class="ti ti-trending-down"></i>{% endif %}{{ comparison.orders_change }}%
+                        </div>
+                    {% else %}
+                        <div class="stat-val" style="font-size:14px; color:#aaa;">—</div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SO'NGGI NAKLADNOYLAR + AGENT OSTATKA          -->
+    <!-- ════════════════════════════════════════════ -->
+    <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:16px; margin-top:8px;">
+
+        <!-- So'nggi nakladnoylar -->
+        <div class="card">
+            <div style="padding:16px 16px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #EBEBEB;">
+                <span style="font-size:14px; font-weight:500;">So'nggi nakladnoylar</span>
+                <a href="{% url 'order_list' %}" class="btn btn-sm">Hammasi <i class="ti ti-arrow-right"></i></a>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="table-base">
+                    <thead>
+                    <tr>
+                        <th>Raqam</th>
+                        <th>Mijoz</th>
+                        <th>Agent</th>
+                        <th>Summa</th>
+                        <th>Holat</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for order in recent_orders %}
+                        <tr>
+                            <td><a href="{% url 'order_detail' order.pk %}"
+                                   style="color:#534AB7; text-decoration:none; font-weight:500;">{{ order.number }}</a>
+                            </td>
+                            <td>{{ order.cliente }}</td>
+                            <td>{{ order.agent }}</td>
+                            <td style="font-weight:500;">{{ order.total_sum|floatformat:0 }}</td>
+                            <td>
+                                {% if order.status == 'paid' %}<span class="badge badge-green">To'langan</span>
+                                {% elif order.status == 'debt' %}<span class="badge badge-red">Qarz</span>
+                                {% elif order.status == 'pending' %}<span class="badge badge-amber">Kutilmoqda</span>
+                                {% else %}<span class="badge badge-gray">Bekor</span>{% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align:center; color:#aaa; padding:24px;">Hali nakladnoy yo'q
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Agent ostatka -->
+        <div class="card">
+            <div style="padding:16px 16px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #EBEBEB;">
+                <span style="font-size:14px; font-weight:500;">Agent ostatka (bugun)</span>
+                <a href="{% url 'agent_balance_list' %}" class="btn btn-sm">Hammasi <i
+                        class="ti ti-arrow-right"></i></a>
+            </div>
+            <div style="padding:12px 16px;">
+                {% for b in agent_balances %}
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid #EBEBEB;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="avatar">
+                                {{ b.agent.first_name|slice:":1"|upper }}{{ b.agent.last_name|slice:":1"|upper }}</div>
+                            <div>
+                                <div style="font-size:13px; font-weight:500;">{{ b.agent }}</div>
+                                <div style="font-size:11px; color:#aaa;">
+                                    Berildi: {{ b.given_amount|floatformat:0 }}</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:13px; font-weight:600; color:#534AB7;">{{ b.remaining|floatformat:0 }}</div>
+                            <div style="font-size:11px; color:#aaa;">qoldi</div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div style="text-align:center; color:#aaa; padding:24px 0; font-size:13px;">
+                        Bugun ostatka kiritilmagan
+                        <br><a href="{% url 'agent_balance_create' %}" class="btn btn-sm" style="margin-top:8px;">Kiritish</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+{% endblock %}

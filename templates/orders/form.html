@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}Yangi nakladnoy{% endblock %}
+{% block breadcrumb %}<a href="{% url 'order_list' %}" style="color:#aaa;text-decoration:none;">Nakladnoylar</a> /
+    Yangi{% endblock %}
+
+{% block content %}
+
+    <!-- Umumiy xatolar (forma va formset darajasida) -->
+    {% if form.non_field_errors %}
+        <div class="alert alert-error">
+            <i class="ti ti-circle-x" style="font-size:16px;flex-shrink:0;margin-top:1px;"></i>
+            <span>{{ form.non_field_errors.0 }}</span>
+        </div>
+    {% endif %}
+    {% if formset.non_form_errors %}
+        <div class="alert alert-error">
+            <i class="ti ti-circle-x" style="font-size:16px;flex-shrink:0;margin-top:1px;"></i>
+            <span>{{ formset.non_form_errors.0 }}</span>
+        </div>
+    {% endif %}
+    {% if form.errors or formset.errors %}
+        <div class="alert alert-error">
+            <i class="ti ti-alert-triangle" style="font-size:16px;flex-shrink:0;margin-top:1px;"></i>
+            <span>Formada xatoliklar bor — quyida qizil rangda belgilangan joylarni tekshiring.</span>
+        </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+            <!-- Asosiy ma'lumotlar -->
+            <div class="card" style="padding:20px;">
+                <div style="font-size:14px; font-weight:600; margin-bottom:16px;">Nakladnoy ma'lumotlari</div>
+
+                <div class="form-group">
+                    <label class="form-label">Mijoz *</label>
+                    <select name="cliente" id="id_cliente" class="form-control" required
+                            onchange="autoSelectAgent(this)">
+                        <option value="">— Tanlang —</option>
+                        {% for c in form.fields.cliente.queryset %}
+                            <option
+                                    value="{{ c.pk }}"
+                                    data-agent-id="{{ c.agent.pk|default:'' }}"
+                                    {% if form.cliente.value|stringformat:"s" == c.pk|stringformat:"s" %}selected{% endif %}
+                            >
+                                {{ c.first_name }}
+                                {{ c.last_name }}{% if c.alternative_name %} — {{ c.alternative_name }}{% endif %}
+                                {% if c.firma_name %} ({{ c.firma_name }}){% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.cliente.errors %}
+                        <div class="form-error">{{ form.cliente.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Agent *</label>
+                    <select name="agent" id="id_agent" class="form-control" required>
+                        <option value="">— Tanlang —</option>
+                        {% for a in form.fields.agent.queryset %}
+                            <option value="{{ a.pk }}"
+                                    {% if form.agent.value|stringformat:"s" == a.pk|stringformat:"s" %}selected{% endif %}>{{ a }}</option>
+                        {% endfor %}
+                    </select>
+                    <div id="agent-auto-hint" style="font-size:11px; color:#888; margin-top:4px; display:none;">
+                        <i class="ti ti-info-circle"></i> Mijozga biriktirilgan agent avtomatik tanlandi
+                    </div>
+                    {% if form.agent.errors %}
+                        <div class="form-error">{{ form.agent.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">To'lov turi</label>
+                    <select name="payment_type" class="form-control">
+                        {% for val, label in form.fields.payment_type.choices %}
+                            <option value="{{ val }}"
+                                    {% if form.payment_type.value == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Nakladnoy rasmi</label>
+                    <input type="file" name="nak_picture" accept="image/*" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Izoh</label>
+                    <textarea name="note" class="form-control" rows="2">{{ form.note.value|default:"" }}</textarea>
+                </div>
+            </div>
+
+            <!-- Tovarlar formset -->
+            <div class="card" style="padding:20px;">
+                <div style="font-size:14px; font-weight:600; margin-bottom:16px;">Tovarlar</div>
+                {{ formset.management_form }}
+                <div id="formset-container">
+                    {% for f in formset %}
+                        <div class="formset-row"
+                             style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:8px; align-items:flex-end; margin-bottom:6px;">
+                            <div>
+                                {% if forloop.first %}<label class="form-label">Tovar</label>{% endif %}
+                                <select name="{{ f.product.html_name }}" class="form-control product-select"
+                                        onchange="fetchPrice(this)">
+                                    <option value="">— Tanlang —</option>
+                                    {% for p in f.fields.product.queryset %}
+                                        <option value="{{ p.pk }}" data-price="{{ p.price }}"
+                                                {% if f.product.value|stringformat:"s" == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.name }}
+                                            ({{ p.stock }} dona)
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                {% if forloop.first %}<label class="form-label">Narx</label>{% endif %}
+                                <input type="number" name="{{ f.price.html_name }}" class="form-control price-input"
+                                       value="{{ f.price.value|default:'' }}" min="0">
+                            </div>
+                            <div>
+                                {% if forloop.first %}<label class="form-label">Miqdor</label>{% endif %}
+                                <input type="number" name="{{ f.quantity.html_name }}" class="form-control"
+                                       value="{{ f.quantity.value|default:1 }}" min="1">
+                            </div>
+                            <div {% if forloop.first %}style="padding-top:22px;"{% endif %}>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)"><i
+                                        class="ti ti-trash"></i></button>
+                            </div>
+                            <div style="display:none;">{{ f.DELETE }}</div>
+                        </div>
+                        {% if f.errors %}
+                            <div class="form-error" style="margin-bottom:8px;">{{ f.errors.as_text }}</div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn" onclick="addRow()" style="margin-top:4px;">
+                    <i class="ti ti-plus"></i> Tovar qo'shish
+                </button>
+
+                <hr class="divider">
+                <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:600;">
+                    <span>Jami:</span>
+                    <span id="total-sum">0 so'm</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:16px;">
+            <button type="submit" class="btn btn-primary"><i class="ti ti-check"></i> Saqlash</button>
+            <a href="{% url 'order_list' %}" class="btn">Bekor qilish</a>
+        </div>
+    </form>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Mijoz tanlanganda, unga biriktirilgan agentni avtomatik tanlash
+        function autoSelectAgent(clienteSelect) {
+            const opt = clienteSelect.options[clienteSelect.selectedIndex];
+            const agentId = opt.dataset.agentId;
+            const agentSelect = document.getElementById('id_agent');
+            const hint = document.getElementById('agent-auto-hint');
+
+            if (agentId) {
+                agentSelect.value = agentId;
+                hint.style.display = 'block';
+            } else {
+                hint.style.display = 'none';
+            }
+        }
+
+        function fetchPrice(select) {
+            const opt = select.options[select.selectedIndex];
+            const row = select.closest('.formset-row');
+            const priceInput = row.querySelector('.price-input');
+            if (opt.dataset.price) {
+                priceInput.value = opt.dataset.price;
+            }
+            calcTotal();
+        }
+
+        function calcTotal() {
+            let total = 0;
+            document.querySelectorAll('.formset-row').forEach(row => {
+                const price = parseFloat(row.querySelector('.price-input')?.value) || 0;
+                const qty = parseFloat(row.querySelector('input[name$="-quantity"]')?.value) || 0;
+                total += price * qty;
+            });
+            const totalEl = document.getElementById('total-sum');
+            if (totalEl) totalEl.textContent = Math.round(total).toLocaleString() + " so'm";
+        }
+
+        function removeRow(btn) {
+            const row = btn.closest('.formset-row');
+            const deleteCheckbox = row.querySelector('input[type=checkbox]');
+            if (deleteCheckbox) {
+                deleteCheckbox.checked = true;
+                row.style.display = 'none';
+            } else {
+                row.remove();
+            }
+            calcTotal();
+        }
+
+        function addRow() {
+            const container = document.getElementById('formset-container');
+            const totalForms = document.querySelector('[name$=TOTAL_FORMS]');
+            const idx = parseInt(totalForms.value);
+            const firstRow = container.querySelector('.formset-row');
+            const newRow = firstRow.cloneNode(true);
+            newRow.querySelectorAll('input, select').forEach(el => {
+                if (el.name) el.name = el.name.replace(/-\d+-/, `-${idx}-`);
+                if (el.id) el.id = el.id.replace(/-\d+-/, `-${idx}-`);
+                if (el.type === 'checkbox') {
+                    el.checked = false;
+                } else {
+                    el.value = '';
+                }
+            });
+            newRow.style.display = '';
+            container.appendChild(newRow);
+            totalForms.value = idx + 1;
+        }
+
+        document.addEventListener('input', calcTotal);
+        calcTotal();
+
+        // Sahifa yuklanganda, agar mijoz allaqachon tanlangan bo'lsa
+        // (masalan validatsiya xatosidan keyin forma qayta ko'rsatilganda),
+        // agentni ham avtomatik bog'lab qo'yamiz
+        document.addEventListener('DOMContentLoaded', function () {
+            const clienteSelect = document.getElementById('id_cliente');
+            if (clienteSelect && clienteSelect.value) {
+                autoSelectAgent(clienteSelect);
+            }
+        });
+    </script>
+{% endblock %}

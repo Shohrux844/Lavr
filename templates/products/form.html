@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'product_list' %}" style="color:#aaa;text-decoration:none;">Tovarlar</a> / {{ title }}{% endblock %}
+{% block content %}
+<div style="max-width:560px;">
+  <div class="card" style="padding:24px;">
+    <h2 style="font-size:16px; font-weight:600; margin-bottom:20px;">{{ title }}</h2>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label class="form-label">{{ field.label }}</label>
+        {% if field.name == 'image' and field.value %}
+        <div style="margin-bottom:8px;">
+          <img src="{{ field.value.url }}" style="width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid #EBEBEB;">
+        </div>
+        {% endif %}
+        {{ field }}
+        {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+        {% if field.help_text %}<div style="font-size:11px; color:#aaa; margin-top:3px;">{{ field.help_text }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <button type="submit" class="btn btn-primary"><i class="ti ti-check"></i> Saqlash</button>
+        <a href="{% url 'product_list' %}" class="btn">Bekor qilish</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

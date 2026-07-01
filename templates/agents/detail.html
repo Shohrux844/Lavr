@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}{{ agent }} — Agent{% endblock %}
+
+{% block breadcrumb %}
+  <a href="{% url 'agent_list' %}" style="color:#aaa;text-decoration:none;">Agentlar</a> / {{ agent }}
+{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'agent_update' agent.pk %}" class="btn"><i class="ti ti-edit"></i> Tahrirlash</a>
+  <a href="{% url 'agent_balance_create' %}" class="btn btn-primary"><i class="ti ti-plus"></i> Ostatka kiritish</a>
+{% endblock %}
+
+{% block content %}
+
+<div style="display:grid; grid-template-columns:1fr 3fr; gap:16px; margin-bottom:16px;">
+
+  <!-- Profil kartochkasi -->
+  <div class="card" style="padding:24px; text-align:center;">
+    <div class="avatar" style="width:56px;height:56px;font-size:20px;margin:0 auto 12px;">
+      {{ agent.first_name|slice:":1"|upper }}{{ agent.last_name|slice:":1"|upper }}
+    </div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:4px;">{{ agent }}</div>
+    <div style="font-size:12px;color:#888;margin-bottom:16px;">{{ agent.phone }}</div>
+    <hr class="divider">
+    <div style="font-size:13px;text-align:left;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span style="color:#888;">Manzil</span>
+        <span>{{ agent.address|default:"—" }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span style="color:#888;">Stavka</span>
+        <span class="badge badge-purple">{{ agent.commission_rate }}%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span style="color:#888;">Limit</span>
+        <span>{{ agent.balance_limit|floatformat:0 }} so'm</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:#888;">Holat</span>
+        {% if agent.is_active %}
+          <span class="badge badge-green">Faol</span>
+        {% else %}
+          <span class="badge badge-red">Nofaol</span>
+        {% endif %}
+      </div>
+    </div>
+    <hr class="divider">
+    <a href="{% url 'agent_delete' agent.pk %}" class="btn btn-danger btn-sm" style="width:100%;justify-content:center;">
+      <i class="ti ti-trash"></i> O'chirish
+    </a>
+  </div>
+
+  <!-- O'ng tomon -->
+  <div>
+
+    <!-- Stat kartochkalar -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+
+      <div class="stat-card">
+        <div class="stat-label">Jami nakladnoylar</div>
+        <div class="stat-val">{{ orders|length }}</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Bugungi ostatka</div>
+        {% if today_balance %}
+          <div class="stat-val">{{ today_balance.remaining|floatformat:0 }}</div>
+          <span class="badge badge-blue" style="margin-top:4px;">so'm qoldi</span>
+        {% else %}
+          <div class="stat-val">—</div>
+        {% endif %}
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Oxirgi maosh</div>
+        {% if salaries %}
+          <div class="stat-val">{{ salaries.0.total_salary|floatformat:0 }}</div>
+          <span class="badge badge-green" style="margin-top:4px;">so'm</span>
+        {% else %}
+          <div class="stat-val">—</div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- So'nggi nakladnoylar jadvali -->
+    <div class="card" style="margin-bottom:16px;">
+      <div style="padding:14px 16px;border-bottom:1px solid #EBEBEB;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:14px;font-weight:500;">So'nggi nakladnoylar</span>
+        <a href="{% url 'order_list' %}?q={{ agent.first_name }}" class="btn btn-sm">
+          Hammasi <i class="ti ti-arrow-right"></i>
+        </a>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="table-base">
+          <thead>
+            <tr>
+              <th>Raqam</th><th>Mijoz</th><th>Sana</th><th>Summa</th><th>Holat</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in orders %}
+            <tr>
+              <td>
+                <a href="{% url 'order_detail' order.pk %}" style="color:#534AB7;text-decoration:none;font-weight:500;">
+                  {{ order.number }}
+                </a>
+              </td>
+              <td>{{ order.cliente }}</td>
+              <td style="color:#888;font-size:12px;">{{ order.date_created|date:"d.m.Y" }}</td>
+              <td style="font-weight:500;">{{ order.total_sum|floatformat:0 }}</td>
+              <td>
+                {% if order.status == 'paid' %}
+                  <span class="badge badge-green">To'langan</span>
+                {% elif order.status == 'debt' %}
+                  <span class="badge badge-red">Qarz</span>
+                {% elif order.status == 'pending' %}
+                  <span class="badge badge-amber">Kutilmoqda</span>
+                {% else %}
+                  <span class="badge badge-gray">Bekor</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{% url 'order_detail' order.pk %}" class="btn btn-sm">
+                  <i class="ti ti-eye"></i>
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" style="text-align:center;color:#aaa;padding:24px;">Nakladnoy yo'q</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Quyi: Ostatka + Maosh tarixi -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+  <!-- Ostatka tarixi -->
+  <div class="card">
+    <div style="padding:14px 16px;border-bottom:1px solid #EBEBEB;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:14px;font-weight:500;">Ostatka tarixi</span>
+      <a href="{% url 'agent_balance_create' %}" class="btn btn-sm btn-primary">
+        <i class="ti ti-plus"></i>
+      </a>
+    </div>
+    <table class="table-base">
+      <thead>
+        <tr><th>Sana</th><th>Berildi</th><th>Qaytarildi</th><th>Qoldi</th></tr>
+      </thead>
+      <tbody>
+        {% for b in balances %}
+        <tr>
+          <td style="color:#888;font-size:12px;">{{ b.date|date:"d.m.Y" }}</td>
+          <td>{{ b.given_amount|floatformat:0 }}</td>
+          <td>{{ b.returned_amount|floatformat:0 }}</td>
+          <td style="font-weight:600;color:#534AB7;">{{ b.remaining|floatformat:0 }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" style="text-align:center;color:#aaa;padding:20px;">Ostatka yo'q</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Maosh tarixi -->
+  <div class="card">
+    <div style="padding:14px 16px;border-bottom:1px solid #EBEBEB;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:14px;font-weight:500;">Maosh tarixi</span>
+      <a href="{% url 'salary_list' %}" class="btn btn-sm">
+        Hammasi <i class="ti ti-arrow-right"></i>
+      </a>
+    </div>
+    <table class="table-base">
+      <thead>
+        <tr><th>Oy</th><th>Sotdi</th><th>Komissiya</th><th>Bonus</th><th>Jami</th><th>Holat</th></tr>
+      </thead>
+      <tbody>
+        {% for s in salaries %}
+        <tr>
+          <td style="color:#888;font-size:12px;">{{ s.month|date:"M Y" }}</td>
+          <td>{{ s.total_sales|floatformat:0 }}</td>
+          <td>{{ s.commission_amount|floatformat:0 }}</td>
+          <td>{{ s.bonus|floatformat:0 }}</td>
+          <td style="font-weight:600;">{{ s.total_salary|floatformat:0 }}</td>
+          <td>
+            {% if s.status == 'paid' %}
+              <span class="badge badge-green">To'landi</span>
+            {% else %}
+              <span class="badge badge-amber">Kutilmoqda</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center;color:#aaa;padding:20px;">Maosh hisob yo'q</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+{% endblock %}

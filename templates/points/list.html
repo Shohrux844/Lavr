@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Nuqtalar{% endblock %}
+{% block breadcrumb %}Nuqtalar / Ro'yxat{% endblock %}
+{% block topbar_actions %}
+    <a href="{% url 'point_map' %}" class="btn"><i class="ti ti-map"></i> Xarita</a>
+    <a href="{% url 'point_create' %}" class="btn btn-primary"><i class="ti ti-plus"></i> Nuqta qo'shish</a>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <table class="table-base">
+            <thead>
+            <tr>
+                <th>Nomi</th>
+                <th>Turi</th>
+                <th>Manzil</th>
+                <th>Telefon</th>
+                <th>Mijoz</th>
+                <th>Holat</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for p in points %}
+                <tr>
+                    <td style="font-weight:500;">{{ p.name }}</td>
+                    <td>
+                        {% if p.kind == 'azs' %}<span class="badge badge-blue">AZS</span>
+                        {% else %}<span class="badge badge-purple">Avto-do'kon</span>{% endif %}
+                    </td>
+                    <td style="color:#888;">{{ p.address|default:"—" }}</td>
+                    <td style="color:#888;">{{ p.phone|default:"—" }}</td>
+                    <td>
+                        {% if p.cliente %}
+                            <a href="{% url 'cliente_detail' p.cliente.pk %}"
+                               style="color:#534AB7; text-decoration:none;">{{ p.cliente }}</a>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if p.has_contract %}<span class="badge badge-green">Shartnoma bor</span>
+                        {% else %}<span class="badge badge-red">Yangi</span>{% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:4px;">
+                            <a href="{% url 'point_update' p.pk %}" class="btn btn-sm"><i class="ti ti-edit"></i></a>
+                            <a href="{% url 'point_delete' p.pk %}" class="btn btn-sm btn-danger"><i
+                                    class="ti ti-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align:center; color:#aaa; padding:32px;">Nuqta yo'q</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

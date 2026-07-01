@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ order.number }} — Tahrirlash{% endblock %}
+{% block breadcrumb %}
+  <a href="{% url 'order_detail' order.pk %}" style="color:#aaa;text-decoration:none;">{{ order.number }}</a> / Tahrirlash
+{% endblock %}
+
+{% block content %}
+<div style="max-width:560px;">
+  <div class="card" style="padding:24px;">
+    <h2 style="font-size:16px; font-weight:600; margin-bottom:20px;">Nakladnoyni tahrirlash</h2>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label class="form-label">{{ field.label }}</label>
+        {% if field.name == 'nak_picture' and field.value %}
+        <div style="margin-bottom:8px;">
+          <img src="{{ field.value.url }}" style="width:100px; border-radius:8px; border:1px solid #EBEBEB;">
+        </div>
+        {% endif %}
+        {{ field }}
+        {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <button type="submit" class="btn btn-primary"><i class="ti ti-check"></i> Saqlash</button>
+        <a href="{% url 'order_detail' order.pk %}" class="btn">Bekor qilish</a>
+      </div>
+    </form>
+  </div>
+  <div style="margin-top:12px; font-size:12px; color:#aaa;">
+    Eslatma: bu yerda tovarlar tahrirlanmaydi — faqat holat, to'lov turi, rasm va izoh. Tovarlarni o'zgartirish uchun nakladnoyni o'chirib qaytadan yarating.
+  </div>
+</div>
+{% endblock %}

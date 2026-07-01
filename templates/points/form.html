@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'point_list' %}" style="color:#aaa;text-decoration:none;">Nuqtalar</a> /
+    {{ title }}{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
+    <style>
+        #pick-map {
+            height: 320px;
+            border-radius: 10px;
+            border: 1px solid #EBEBEB;
+            margin-bottom: 12px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div style="max-width:560px;">
+        <div class="card" style="padding:24px;">
+            <h2 style="font-size:16px; font-weight:600; margin-bottom:16px;">{{ title }}</h2>
+
+            <div style="font-size:12px; color:#888; margin-bottom:6px;">
+                <i class="ti ti-info-circle"></i> Joyni aniq belgilash uchun xaritada bosing
+            </div>
+            <div id="pick-map"></div>
+
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-group">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                    <button type="submit" class="btn btn-primary"><i class="ti ti-check"></i> Saqlash</button>
+                    <a href="{% url 'point_list' %}" class="btn">Bekor qilish</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script>
+        const initialLat = parseFloat(document.getElementById('id_latitude').value) || 41.311081;
+        const initialLng = parseFloat(document.getElementById('id_longitude').value) || 69.279737;
+
+        const pickMap = L.map('pick-map').setView([initialLat, initialLng], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19,
+        }).addTo(pickMap);
+
+        let marker = null;
+        if (document.getElementById('id_latitude').value) {
+            marker = L.marker([initialLat, initialLng]).addTo(pickMap);
+        }
+
+        pickMap.on('click', function (e) {
+            const {lat, lng} = e.latlng;
+            document.getElementById('id_latitude').value = lat.toFixed(6);
+            document.getElementById('id_latitude').removeAttribute('readonly');
+            document.getElementById('id_longitude').value = lng.toFixed(6);
+            document.getElementById('id_longitude').removeAttribute('readonly');
+
+            if (marker) {
+                marker.setLatLng(e.latlng);
+            } else {
+                marker = L.marker(e.latlng).addTo(pickMap);
+            }
+        });
+    </script>
+{% endblock %}

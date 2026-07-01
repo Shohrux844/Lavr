@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}O'chirish{% endblock %}
+{% block content %}
+<div style="max-width:420px; margin:0 auto;">
+  <div class="card" style="padding:28px; text-align:center;">
+    <div style="width:56px;height:56px;border-radius:50%;background:#FCEBEB;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+      <i class="ti ti-trash" style="font-size:24px;color:#A32D2D;"></i>
+    </div>
+    <h2 style="font-size:16px;font-weight:600;margin-bottom:8px;">O'chirishni tasdiqlang</h2>
+    <p style="font-size:13px;color:#888;margin-bottom:24px;">
+      <b>{{ type }}: {{ object }}</b> ni o'chirmoqchimisiz?<br>Bu amalni ortga qaytarib bo'lmaydi.
+    </p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger"><i class="ti ti-trash"></i> Ha, o'chirish</button>
+      </form>
+      <a href="javascript:history.back()" class="btn">Bekor qilish</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

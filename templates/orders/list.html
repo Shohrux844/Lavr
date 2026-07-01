@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Nakladnoylar{% endblock %}
+{% block breadcrumb %}<a href="{% url 'dashboard' %}" style="color:#aaa;text-decoration:none;">Dashboard</a> /
+    Nakladnoylar{% endblock %}
+{% block topbar_actions %}
+    <a href="{% url 'order_export_excel' %}?{{ request.GET.urlencode }}" class="btn">
+        <i class="ti ti-file-spreadsheet"></i> Excel
+    </a>
+    <a href="{% url 'order_export_pdf' %}?{{ request.GET.urlencode }}" class="btn">
+        <i class="ti ti-file-type-pdf"></i> PDF
+    </a>
+    <a href="{% url 'order_create' %}" class="btn btn-primary"><i class="ti ti-plus"></i> Yangi nakladnoy</a>
+{% endblock %}
+
+{% block content %}
+    <!-- Filter paneli -->
+    <div class="card" style="padding:14px 16px; margin-bottom:16px;">
+        <form method="get" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+            <div>
+                <label class="form-label">Qidirish</label>
+                <input type="text" name="q" value="{{ q }}" placeholder="Raqam, mijoz, agent..." class="form-control"
+                       style="width:220px;">
+            </div>
+            <div>
+                <label class="form-label">Holat</label>
+                <select name="status" class="form-control" style="width:160px;">
+                    <option value="">Hammasi</option>
+                    {% for val, label in status_choices %}
+                        <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Dan</label>
+                <input type="date" name="date_from" value="{{ date_from }}" class="form-control" style="width:150px;">
+            </div>
+            <div>
+                <label class="form-label">Gacha</label>
+                <input type="date" name="date_to" value="{{ date_to }}" class="form-control" style="width:150px;">
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="ti ti-search"></i> Qidirish</button>
+            {% if q or status_filter or date_from or date_to %}
+                <a href="{% url 'order_list' %}" class="btn">Tozalash</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="card">
+        <div style="overflow-x:auto;">
+            <table class="table-base">
+                <thead>
+                <tr>
+                    <th>Raqam</th>
+                    <th>Sana</th>
+                    <th>Mijoz</th>
+                    <th>Agent</th>
+                    <th>To'lov turi</th>
+                    <th>Summa</th>
+                    <th>Holat</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td><a href="{% url 'order_detail' order.pk %}"
+                               style="color:#534AB7;text-decoration:none;font-weight:500;">{{ order.number }}</a></td>
+                        <td style="color:#888;">{{ order.date_created|date:"d.m.Y" }}</td>
+                        <td>{{ order.cliente }}</td>
+                        <td>{{ order.agent }}</td>
+                        <td>
+                            {% if order.payment_type == 'cash' %}<span class="badge badge-green">Naqd</span>
+                            {% elif order.payment_type == 'transfer' %}<span class="badge badge-blue">Perech.</span>
+                            {% else %}<span class="badge badge-amber">Qarz</span>{% endif %}
+                        </td>
+                        <td style="font-weight:500;">{{ order.total_sum|floatformat:0 }}</td>
+                        <td>
+                            {% if order.status == 'paid' %}<span class="badge badge-green">To'langan</span>
+                            {% elif order.status == 'debt' %}<span class="badge badge-red">Qarz</span>
+                            {% elif order.status == 'pending' %}<span class="badge badge-amber">Kutilmoqda</span>
+                            {% else %}<span class="badge badge-gray">Bekor</span>{% endif %}
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:4px;">
+                                <a href="{% url 'order_detail' order.pk %}" class="btn btn-sm"><i class="ti ti-eye"></i></a>
+                                <a href="{% url 'order_update' order.pk %}" class="btn btn-sm"><i
+                                        class="ti ti-edit"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align:center;color:#aaa;padding:32px;">Nakladnoy topilmadi</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Tashriflar{% endblock %}
+{% block breadcrumb %}Nuqtalar / Tashriflar{% endblock %}
+{% block topbar_actions %}
+    <a href="{% url 'point_map' %}" class="btn"><i class="ti ti-map"></i> Xarita</a>
+    <a href="{% url 'visit_create' %}" class="btn btn-primary"><i class="ti ti-plus"></i> Tashrif belgilash</a>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <table class="table-base">
+            <thead>
+            <tr>
+                <th>Sana</th>
+                <th>Agent</th>
+                <th>Joy</th>
+                <th>Holat</th>
+                <th>Telegram</th>
+                <th>Izoh</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for v in visits %}
+                <tr>
+                    <td style="color:#888; font-size:12px;">{{ v.date_created|date:"d.m.Y H:i" }}</td>
+                    <td>{{ v.agent }}</td>
+                    <td>{{ v.point.name }}</td>
+                    <td>
+                        {% if v.point.has_contract %}<span class="badge badge-green">Shartnoma bor</span>
+                        {% else %}<span class="badge badge-red">Yangi</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if v.telegram_sent %}
+                            <span class="badge badge-blue"><i class="ti ti-send"></i> Yuborildi</span>
+                        {% else %}<span class="badge badge-gray">Yuborilmagan</span>{% endif %}
+                    </td>
+                    <td style="color:#888; font-size:12px;">{{ v.note|default:"—"|truncatechars:40 }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center; color:#aaa; padding:32px;">Tashrif yo'q</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
