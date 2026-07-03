@@ -18,69 +18,14 @@ from django.db.models import (
 )
 from django.utils import timezone
 
+from agent.models import Agent
+
 
 # ──────────────────────────────────────────────
 # 1. Foydalanuvchi
 # ──────────────────────────────────────────────
 class User(AbstractUser):
     pass
-
-
-# ──────────────────────────────────────────────
-# 2. Agent
-# ──────────────────────────────────────────────
-class Agent(Model):
-    first_name = CharField(max_length=120)
-    last_name = CharField(max_length=120)
-    phone = CharField(max_length=20)
-    address = CharField(max_length=255, blank=True)
-
-    # Maosh hisoblash uchun stavka (foiz, masalan 3.5 = 3.5%)
-    commission_rate = DecimalField(
-        max_digits=5, decimal_places=2, default=3.0,
-        help_text="Foiz stavkasi, masalan 3.5"
-    )
-    # Agentga berilgan pul limiti
-    balance_limit = IntegerField(
-        default=0,
-        help_text="Agentga berilishi mumkin bo'lgan maksimal naqd pul"
-    )
-    is_active = BooleanField(default=True)
-    date_created = DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.first_name} {self.last_name}"
-
-    class Meta:
-        verbose_name = "Agent"
-        verbose_name_plural = "Agentlar"
-
-
-# ──────────────────────────────────────────────
-# 3. Agent qo'lidagi naqd pul (Ostatka)
-# ──────────────────────────────────────────────
-class AgentBalance(Model):
-    """
-    Agentga kun boshida berilgan pul va qaytargan pulini kuzatish.
-    Har kun yangi yozuv yaratiladi.
-    """
-    agent = ForeignKey(Agent, on_delete=CASCADE, related_name='balances')
-    date = DateField(default=timezone.now)
-    given_amount = IntegerField(default=0, help_text="Agentga berilgan pul")
-    returned_amount = IntegerField(default=0, help_text="Agent qaytargan pul")
-    note = TextField(blank=True)
-
-    @property
-    def remaining(self):
-        return self.given_amount - self.returned_amount
-
-    def __str__(self):
-        return f"{self.agent} — {self.date} | Qoldi: {self.remaining}"
-
-    class Meta:
-        verbose_name = "Agent balansi"
-        verbose_name_plural = "Agent balanslari"
-        ordering = ['-date']
 
 
 # ──────────────────────────────────────────────

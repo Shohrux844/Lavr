@@ -1,0 +1,29 @@
+{% extends "agents/base_agent.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <a href="{% url 'agent_cliente_list' %}"
+       style="font-size:13px; color:#534AB7; text-decoration:none; display:inline-flex; align-items:center; gap:4px; margin-bottom:12px;">
+        <i class="ti ti-arrow-left"></i> Mijozlar
+    </a>
+
+    <div class="card" style="padding:16px;">
+        <div style="font-size:15px; font-weight:600; margin-bottom:16px;">{{ title }}</div>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                {% if field.name != 'agent' %}
+                    <div class="form-group">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:8px;">
+                <i class="ti ti-check"></i> Saqlash
+            </button>
+        </form>
+    </div>
+{% endblock %}

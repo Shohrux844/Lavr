@@ -22,6 +22,7 @@ urlpatterns = [
 
     # ─── Asosiy app (apps.urls — sizning app nomingiz bo'yicha o'zgartiring) ───
     path('', include('apps.urls')),
+    path('agent/', include('agent.urls')),
 ]
 
 # ─── Media fayllarni development rejimida ko'rsatish ───

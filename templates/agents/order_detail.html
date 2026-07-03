@@ -1,0 +1,76 @@
+{% extends "agents/base_agent.html" %}
+{% block title %}{{ order.number }}{% endblock %}
+
+{% block content %}
+    <a href="{% url 'agent_order_list' %}"
+       style="font-size:13px; color:#534AB7; text-decoration:none; display:inline-flex; align-items:center; gap:4px; margin-bottom:12px;">
+        <i class="ti ti-arrow-left"></i> Nakladnoylar
+    </a>
+
+    <div class="card" style="padding:16px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+            <div>
+                <div style="font-size:18px; font-weight:600;">{{ order.number }}</div>
+                <div style="font-size:12px; color:#888;">{{ order.date_created|date:"d.m.Y H:i" }}</div>
+            </div>
+            {% if order.status == 'paid' %}<span class="badge badge-green">To'langan</span>
+            {% elif order.status == 'debt' %}<span class="badge badge-red">Qarz</span>
+            {% elif order.status == 'pending' %}<span class="badge badge-amber">Kutilmoqda</span>
+            {% else %}<span class="badge badge-gray">Bekor</span>{% endif %}
+        </div>
+        <hr class="divider">
+        <div style="font-size:13px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between;">
+                <span style="color:#888;">Mijoz</span><span style="font-weight:500;">{{ order.cliente }}</span>
+            </div>
+            {% if order.cliente.firma_name %}
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#888;">Firma</span><span>{{ order.cliente.firma_name }}</span>
+                </div>
+            {% endif %}
+            <div style="display:flex; justify-content:space-between;">
+                <span style="color:#888;">To'lov turi</span><span>{{ order.get_payment_type_display }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span style="color:#888;">Jami summa</span><span
+                    style="font-weight:700; font-size:16px;">{{ order.total_sum|floatformat:0 }} so'm</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tovarlar -->
+    <div style="font-size:13px; font-weight:500; margin-bottom:8px;">Tovarlar</div>
+    <div class="card" style="overflow:hidden; margin-bottom:12px;">
+        {% for item in order.items.all %}
+            <div style="padding:10px 14px; border-bottom:1px solid #EBEBEB; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-size:13px; font-weight:500;">{{ item.product.name }}</div>
+                    <div style="font-size:11px; color:#888;">{{ item.price|floatformat:0 }} × {{ item.quantity }}</div>
+                </div>
+                <div style="font-weight:600;">{{ item.subtotal|floatformat:0 }}</div>
+            </div>
+        {% empty %}
+            <div style="text-align:center; color:#aaa; padding:16px; font-size:13px;">Tovar yo'q</div>
+        {% endfor %}
+    </div>
+
+    <!-- To'lovlar -->
+    <div style="font-size:13px; font-weight:500; margin-bottom:8px;">To'lovlar</div>
+    <div class="card" style="padding:14px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px;">
+            <span style="color:#888;">To'langan:</span>
+            <span style="color:#3B6D11; font-weight:600;">{{ total_paid|floatformat:0 }} so'm</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:700;">
+            <span>Qolgan qarz:</span>
+            <span style="color:{% if remaining_debt > 0 %}#A32D2D{% else %}#3B6D11{% endif %};">{{ remaining_debt|floatformat:0 }} so'm</span>
+        </div>
+    </div>
+
+    {% if order.nak_picture %}
+        <div class="card" style="padding:14px;">
+            <div style="font-size:12px; color:#888; margin-bottom:8px;">Nakladnoy rasmi</div>
+            <img src="{{ order.nak_picture.url }}" style="width:100%; border-radius:8px;">
+        </div>
+    {% endif %}
+{% endblock %}

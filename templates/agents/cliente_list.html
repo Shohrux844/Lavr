@@ -1,0 +1,40 @@
+{% extends "agents/base_agent.html" %}
+{% block title %}Mijozlar{% endblock %}
+
+{% block content %}
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <form method="get" style="flex:1; display:flex; gap:8px;">
+            <input type="text" name="q" value="{{ q }}" placeholder="Ism, firma, telefon..." class="form-control">
+            <button type="submit" class="btn btn-primary"><i class="ti ti-search"></i></button>
+            {% if q %}<a href="{% url 'agent_cliente_list' %}" class="btn">✕</a>{% endif %}
+        </form>
+        <a href="{% url 'agent_cliente_create' %}" class="btn btn-primary"><i class="ti ti-plus"></i></a>
+    </div>
+
+    <div class="card" style="overflow:hidden;">
+        {% for c in clientes %}
+            <div style="padding:12px 14px; border-bottom:1px solid #EBEBEB;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600;">{{ c.first_name }} {{ c.last_name }}</div>
+                        {% if c.firma_name %}
+                            <div style="font-size:12px; color:#534AB7;">{{ c.firma_name }}</div>{% endif %}
+                        {% if c.alternative_name %}
+                            <div style="font-size:11px; color:#aaa;">Alt: {{ c.alternative_name }}</div>{% endif %}
+                        {% if c.phone %}
+                            <div style="font-size:12px; color:#888; margin-top:2px;"><i class="ti ti-phone"
+                                                                                        style="font-size:12px;"></i> {{ c.phone }}
+                            </div>{% endif %}
+                    </div>
+                    <a href="tel:{{ c.phone }}" class="btn btn-sm" style="flex-shrink:0;">
+                        <i class="ti ti-phone-call"></i>
+                    </a>
+                </div>
+            </div>
+        {% empty %}
+            <div style="text-align:center; color:#aaa; padding:32px; font-size:13px;">
+                Mijoz yo'q. <a href="{% url 'agent_cliente_create' %}" style="color:#534AB7;">Qo'shish</a>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

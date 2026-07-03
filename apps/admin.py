@@ -1,22 +1,21 @@
 from django.contrib import admin
+
+from agent.models import AgentBalance
 from .models import (
-    User, Agent, AgentBalance, Cliente, Product,
+    User, Agent, Cliente, Product,
     Order, OrderItem, Payment, Salary,
     PointOfInterest, Visit,
 )
 
 
-@admin.register(Agent)
-class AgentAdmin(admin.ModelAdmin):
-    list_display = ['first_name', 'last_name', 'phone', 'commission_rate', 'is_active']
-    search_fields = ['first_name', 'last_name', 'phone']
-    list_filter = ['is_active']
-
-
-@admin.register(AgentBalance)
-class AgentBalanceAdmin(admin.ModelAdmin):
-    list_display = ['agent', 'date', 'given_amount', 'returned_amount', 'remaining']
-    list_filter = ['date']
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    search_fields = (
+        "username",
+        "first_name",
+        "last_name",
+        "email",
+    )
 
 
 @admin.register(Cliente)

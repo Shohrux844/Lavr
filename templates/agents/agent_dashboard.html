@@ -1,0 +1,112 @@
+{% extends "agents/base_agent.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+    <div style="font-size:14px; font-weight:600; margin-bottom:12px;">Salom, {{ agent.first_name }} 👋</div>
+
+    <!-- Haftalik / Oylik stat -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+        <div class="stat-card">
+            <div class="stat-label">Bu hafta — savdo</div>
+            <div class="stat-val">{{ week_sales|floatformat:0 }}</div>
+            <div style="font-size:11px; color:#888; margin-top:2px;">{{ week_orders_count }} ta nakladnoy</div>
+            <div style="margin-top:4px;"><span class="badge badge-purple">{{ week_commission|floatformat:0 }} so'm komissiya</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Bu oy — savdo</div>
+            <div class="stat-val">{{ month_sales|floatformat:0 }}</div>
+            <div style="font-size:11px; color:#888; margin-top:2px;">{{ month_orders_count }} ta nakladnoy</div>
+            <div style="margin-top:4px;"><span class="badge badge-purple">{{ month_commission|floatformat:0 }} so'm komissiya</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bugungi ostatka -->
+    {% if today_balance %}
+        <div class="card"
+             style="padding:12px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div style="font-size:12px; color:#888;">Bugungi ostatka (qo'lda)</div>
+                <div style="font-size:18px; font-weight:600; color:#534AB7;">{{ today_balance.remaining|floatformat:0 }}
+                    so'm
+                </div>
+            </div>
+            <div style="text-align:right; font-size:12px; color:#888;">
+                <div>Berildi: {{ today_balance.given_amount|floatformat:0 }}</div>
+                <div>Qaytarildi: {{ today_balance.returned_amount|floatformat:0 }}</div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Mijozlar qarzlari -->
+    {% if cliente_debts %}
+        <div style="font-size:13px; font-weight:500; margin-bottom:8px;">Mijozlar — qarz holati</div>
+        <div class="card" style="margin-bottom:16px; overflow:hidden;">
+            {% for cd in cliente_debts %}
+                <div style="padding:10px 14px; border-bottom:1px solid #EBEBEB; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:13px; font-weight:500;">{{ cd.cliente }}</div>
+                        {% if cd.cliente.firma_name %}
+                            <div style="font-size:11px; color:#888;">{{ cd.cliente.firma_name }}</div>{% endif %}
+                    </div>
+                    <div style="text-align:right;">
+                        {% if cd.debt > 0 %}
+                            <div style="font-size:13px; font-weight:600; color:#A32D2D;">{{ cd.debt|floatformat:0 }}
+                                so'm
+                            </div>
+                            <div style="font-size:11px; color:#aaa;">qarz</div>
+                        {% else %}
+                            <span class="badge badge-green">Qarz yo'q</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- So'nggi nakladnoylar -->
+    <div style="font-size:13px; font-weight:500; margin-bottom:8px;">So'nggi nakladnoylar</div>
+    <div class="card" style="overflow:hidden;">
+        {% for order in recent_orders %}
+            <a href="{% url 'agent_order_detail' order.pk %}"
+               style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid #EBEBEB; text-decoration:none; color:inherit;">
+                <div>
+                    <div style="font-size:13px; font-weight:500; color:#534AB7;">{{ order.number }}</div>
+                    <div style="font-size:11px; color:#888;">{{ order.cliente }}
+                        · {{ order.date_created|date:"d.m.Y" }}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:13px; font-weight:500;">{{ order.total_sum|floatformat:0 }}</div>
+                    {% if order.status == 'paid' %}<span class="badge badge-green">To'langan</span>
+                    {% elif order.status == 'debt' %}<span class="badge badge-red">Qarz</span>
+                    {% else %}<span class="badge badge-amber">Kutilmoqda</span>{% endif %}
+                </div>
+            </a>
+        {% empty %}
+            <div style="text-align:center; color:#aaa; padding:20px; font-size:13px;">Nakladnoy yo'q</div>
+        {% endfor %}
+    </div>
+
+    <!-- Maosh tarixi -->
+    {% if salaries %}
+        <div style="font-size:13px; font-weight:500; margin:16px 0 8px;">Maosh tarixi</div>
+        <div class="card" style="overflow:hidden;">
+            {% for s in salaries %}
+                <div style="padding:10px 14px; border-bottom:1px solid #EBEBEB; display:flex; justify-content:space-between;">
+                    <div>
+                        <div style="font-size:13px; font-weight:500;">{{ s.month|date:"F Y" }}</div>
+                        <div style="font-size:11px; color:#888;">{{ s.total_sales|floatformat:0 }} so'm savdo
+                            · {{ s.commission_rate }}%
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:13px; font-weight:600;">{{ s.total_salary|floatformat:0 }}</div>
+                        {% if s.status == 'paid' %}<span class="badge badge-green">To'landi</span>
+                        {% else %}<span class="badge badge-amber">Kutilmoqda</span>{% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

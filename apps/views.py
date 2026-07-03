@@ -7,8 +7,9 @@ from django.http import JsonResponse
 from datetime import date, timedelta
 import calendar
 
+from agent.models import AgentBalance
 from .models import (
-    Agent, AgentBalance, Cliente, Product,
+    Agent, Cliente, Product,
     Order, OrderItem, Payment, Salary,
     PointOfInterest, Visit,
 )
@@ -246,120 +247,6 @@ def dashboard(request):
 def models_low_threshold():
     """Yordamchi: stock_threshold uchun."""
     return 10
-
-
-# ════════════════════════════════════════════════
-# AGENT
-# ════════════════════════════════════════════════
-
-@login_required
-def agent_list(request):
-    agents = Agent.objects.filter(is_active=True).annotate(
-        order_count=Count('orders'),
-        total_sales=Sum('orders__total_sum'),
-    )
-    return render(request, 'agents/list.html', {'agents': agents})
-
-
-@login_required
-def agent_detail(request, pk):
-    agent = get_object_or_404(Agent, pk=pk)
-    orders = agent.orders.all()[:20]
-    balances = agent.balances.all()[:10]
-    salaries = agent.salaries.all()[:6]
-    today_balance = agent.balances.filter(date=date.today()).first()
-
-    context = {
-        'agent': agent,
-        'orders': orders,
-        'balances': balances,
-        'salaries': salaries,
-        'today_balance': today_balance,
-    }
-    return render(request, 'agents/detail.html', context)
-
-
-@login_required
-def agent_create(request):
-    if request.method == 'POST':
-        form = AgentForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Agent muvaffaqiyatli qo'shildi.")
-            return redirect('agent_list')
-    else:
-        form = AgentForm()
-    return render(request, 'agents/form.html', {'form': form, 'title': "Yangi agent"})
-
-
-@login_required
-def agent_update(request, pk):
-    agent = get_object_or_404(Agent, pk=pk)
-    if request.method == 'POST':
-        form = AgentForm(request.POST, instance=agent)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Agent ma'lumotlari yangilandi.")
-            return redirect('agent_detail', pk=pk)
-    else:
-        form = AgentForm(instance=agent)
-    return render(request, 'agents/form.html', {'form': form, 'title': "Agentni tahrirlash"})
-
-
-@login_required
-def agent_delete(request, pk):
-    agent = get_object_or_404(Agent, pk=pk)
-    if request.method == 'POST':
-        agent.is_active = False
-        agent.save()
-        messages.success(request, "Agent o'chirildi.")
-        return redirect('agent_list')
-    return render(request, 'confirm_delete.html', {'object': agent, 'type': 'Agent'})
-
-
-# ════════════════════════════════════════════════
-# AGENT BALANCE (Ostatka)
-# ════════════════════════════════════════════════
-
-@login_required
-def agent_balance_list(request):
-    today = date.today()
-    balances = (
-        AgentBalance.objects.filter(date=today)
-        .select_related('agent')
-        .order_by('-given_amount')
-    )
-    return render(request, 'balances/list.html', {
-        'balances': balances,
-        'today': today,
-    })
-
-
-@login_required
-def agent_balance_create(request):
-    if request.method == 'POST':
-        form = AgentBalanceForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Ostatka kiritildi.")
-            return redirect('agent_balance_list')
-    else:
-        form = AgentBalanceForm()
-    return render(request, 'balances/form.html', {'form': form, 'title': "Ostatka kiritish"})
-
-
-@login_required
-def agent_balance_update(request, pk):
-    balance = get_object_or_404(AgentBalance, pk=pk)
-    if request.method == 'POST':
-        form = AgentBalanceForm(request.POST, instance=balance)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Ostatka yangilandi.")
-            return redirect('agent_balance_list')
-    else:
-        form = AgentBalanceForm(instance=balance)
-    return render(request, 'balances/form.html', {'form': form, 'title': "Ostatkani tahrirlash"})
 
 
 # ════════════════════════════════════════════════

@@ -1,0 +1,307 @@
+{% extends "agents/base_agent.html" %}
+{% block title %}Yo'lda{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .nearby-card {
+            background: #fff;
+            border: 1px solid #EBEBEB;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+
+        .nearby-card.new {
+            border-left: 4px solid #A32D2D;
+        }
+
+        .nearby-card.has-contract {
+            border-left: 4px solid #3B6D11;
+        }
+
+        .nearby-card.client {
+            border-left: 4px solid #534AB7;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin: 16px 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #gps-bar {
+            background: #EEEDFE;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        #gps-bar.active {
+            background: #EAF3DE;
+        }
+
+        #gps-bar.error {
+            background: #FCEBEB;
+        }
+
+        .pulse {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #534AB7;
+            animation: pulse 1.5s infinite;
+        }
+
+        .pulse.active {
+            background: #3B6D11;
+        }
+
+        .pulse.stopped {
+            animation: none;
+            background: #ccc;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1)
+            }
+            50% {
+                opacity: .5;
+                transform: scale(1.4)
+            }
+        }
+
+        #start-btn {
+            width: 100%;
+            justify-content: center;
+            padding: 12px;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        #stop-btn {
+            width: 100%;
+            justify-content: center;
+            padding: 10px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .phone-link {
+            color: #534AB7;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .debt-badge {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .debt-badge.red {
+            color: #A32D2D;
+        }
+
+        .debt-badge.green {
+            color: #3B6D11;
+        }
+
+        .km-tag {
+            font-size: 11px;
+            color: #aaa;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Agent tanlash -->
+    <div style="background:#fff; border:1px solid #EBEBEB; border-radius:12px; padding:14px; margin-bottom:12px;">
+        <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Siz: {{ agent }}</div>
+
+        <button id="start-btn" class="btn btn-primary" onclick="startTracking()">
+            <i class="ti ti-navigation"></i> Kuzatuvni boshlash
+        </button>
+        <button id="stop-btn" class="btn" style="background:#FCEBEB; color:#A32D2D; border-color:#F7C1C1;"
+                onclick="stopTracking()">
+            <i class="ti ti-player-stop"></i> To'xtatish
+        </button>
+    </div>
+
+    <!-- GPS holat chiziq -->
+    <div id="gps-bar">
+        <div id="pulse-dot" class="pulse stopped"></div>
+        <span id="gps-text">Kuzatuv boshlanmagan</span>
+    </div>
+
+    <!-- Yaqin mijozlar -->
+    <div id="clientes-section" style="display:none;">
+        <div class="section-title"><i class="ti ti-building-store" style="font-size:16px;"></i> Yaqin atrofdagi
+            mijozlaringiz
+        </div>
+        <div id="clientes-list"></div>
+    </div>
+
+    <!-- Yaqin AZS/do'konlar -->
+    <div id="points-section" style="display:none;">
+        <div class="section-title"><i class="ti ti-gas-station" style="font-size:16px;"></i> Yaqin AZS / Avto-do'konlar
+        </div>
+        <div id="points-list"></div>
+    </div>
+
+    <!-- Bo'sh holat -->
+    <div id="empty-state" style="text-align:center; color:#aaa; padding:40px 16px; font-size:13px;">
+        <i class="ti ti-map-pin-off" style="font-size:36px; display:block; margin-bottom:8px; color:#ddd;"></i>
+        Kuzatuvni boshlasangiz, atrofingizdagi<br>mijozlar va nuqtalar shu yerda ko'rinadi
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        let watchId = null;
+        let lastCheck = 0;
+        const CHECK_INTERVAL = 15000;
+        const AGENT_ID = "{{ agent.pk }}";
+
+        function setGpsBar(state, text) {
+            const bar = document.getElementById('gps-bar');
+            const dot = document.getElementById('pulse-dot');
+            const gpsText = document.getElementById('gps-text');
+            bar.className = state;
+            dot.className = 'pulse ' + (state === 'active' ? 'active' : state === 'error' ? 'stopped' : '');
+            gpsText.textContent = text;
+        }
+
+        function startTracking() {
+            if (!navigator.geolocation) {
+                setGpsBar('error', 'GPS qo\'llab-quvvatlanmaydi');
+                return;
+            }
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('stop-btn').style.display = 'flex';
+            setGpsBar('', 'GPS aniqlanmoqda...');
+
+            watchId = navigator.geolocation.watchPosition(
+                onPosition, onError,
+                {enableHighAccuracy: true, maximumAge: 5000, timeout: 15000}
+            );
+        }
+
+        function stopTracking() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            document.getElementById('start-btn').style.display = 'flex';
+            document.getElementById('stop-btn').style.display = 'none';
+            setGpsBar('', 'Kuzatuv to\'xtatildi');
+        }
+
+        function onError(err) {
+            setGpsBar('error', 'GPS xatosi: ' + err.message);
+        }
+
+        function onPosition(pos) {
+            const {latitude: lat, longitude: lng, accuracy} = pos.coords;
+            setGpsBar('active', `Aniqlandi · ±${Math.round(accuracy)}m`);
+
+            const now = Date.now();
+            if (now - lastCheck < CHECK_INTERVAL) return;
+            lastCheck = now;
+
+            fetch(`{% url 'agent_check_nearby' %}?lat=${lat}&lng=${lng}`)
+                .then(r => r.json())
+                .then(data => render(data))
+                .catch(() => setGpsBar('error', 'Server bilan aloqa xatosi'));
+        }
+
+        function distLabel(m) {
+            return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : m + ' m';
+        }
+
+        function render(data) {
+            const clientes = data.nearby_clientes || [];
+            const points = data.nearby_points || [];
+            const empty = document.getElementById('empty-state');
+
+            // Mijozlar
+            const csec = document.getElementById('clientes-section');
+            const clist = document.getElementById('clientes-list');
+            if (clientes.length > 0) {
+                csec.style.display = 'block';
+                clist.innerHTML = '';
+                clientes.forEach(c => {
+                    const debtClass = c.debt > 0 ? 'red' : 'green';
+                    const debtText = c.debt > 0 ? c.debt.toLocaleString() + " so'm qarz" : "Qarz yo'q";
+                    const callHtml = c.phone ? `<a class="phone-link" href="tel:${c.phone}"><i class="ti ti-phone-call"></i> ${c.phone}</a>` : '';
+                    const altHtml = c.alternative ? `<div style="font-size:11px;color:#aaa;">Alt: ${c.alternative}</div>` : '';
+                    const firmaHtml = c.firma ? `<div style="font-size:12px;color:#534AB7;">${c.firma}</div>` : '';
+                    const notifHtml = c.just_notified ? `<div style="font-size:11px;color:#185FA5;margin-top:4px;"><i class="ti ti-send"></i> Telegramga xabar yuborildi</div>` : '';
+
+                    clist.innerHTML += `
+        <div class="nearby-card client">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div style="font-size:14px;font-weight:600;">${c.name}</div>
+              ${firmaHtml}${altHtml}${callHtml}
+            </div>
+            <span class="km-tag">${distLabel(c.distance)}</span>
+          </div>
+          <hr style="border:none;border-top:1px solid #EBEBEB;margin:8px 0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:12px;color:#888;">Savdo: ${c.total_sales.toLocaleString()} · To'lagan: ${c.total_paid.toLocaleString()}</div>
+            <span class="debt-badge ${debtClass}">${debtText}</span>
+          </div>
+          ${notifHtml}
+        </div>`;
+                });
+            } else {
+                csec.style.display = 'none';
+            }
+
+            // AZS/Do'konlar
+            const psec = document.getElementById('points-section');
+            const plist = document.getElementById('points-list');
+            if (points.length > 0) {
+                psec.style.display = 'block';
+                plist.innerHTML = '';
+                points.forEach(p => {
+                    const cls = p.has_contract ? 'has-contract' : 'new';
+                    const badge = p.has_contract
+                        ? `<span class="badge badge-green">Shartnoma bor</span>`
+                        : `<span class="badge badge-red">Yangi</span>`;
+                    const debtHtml = p.has_contract
+                        ? `<div style="font-size:12px;margin-top:6px;">Mijoz: <b>${p.cliente}</b> · Qarz: <b style="color:${p.debt > 0 ? '#A32D2D' : '#3B6D11'}">${p.debt.toLocaleString()} so'm</b></div>`
+                        : '';
+                    const notifHtml = p.just_notified ? `<div style="font-size:11px;color:#185FA5;margin-top:4px;"><i class="ti ti-send"></i> Telegramga xabar yuborildi</div>` : '';
+
+                    plist.innerHTML += `
+        <div class="nearby-card ${cls}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div style="font-size:14px;font-weight:600;">${p.name}</div>
+              <div style="font-size:12px;color:#888;">${p.kind}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+              ${badge}<span class="km-tag">${distLabel(p.distance)}</span>
+            </div>
+          </div>
+          ${debtHtml}${notifHtml}
+        </div>`;
+                });
+            } else {
+                psec.style.display = 'none';
+            }
+
+            empty.style.display = (clientes.length + points.length === 0) ? 'block' : 'none';
+        }
+    </script>
+{% endblock %}

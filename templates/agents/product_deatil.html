@@ -1,0 +1,44 @@
+{% extends "agents/base_agent.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+    <a href="{% url 'agent_product_list' %}"
+       style="font-size:13px; color:#534AB7; text-decoration:none; display:inline-flex; align-items:center; gap:4px; margin-bottom:12px;">
+        <i class="ti ti-arrow-left"></i> Tovarlar
+    </a>
+
+    <div class="card" style="padding:16px;">
+        {% if product.image %}
+            <img src="{{ product.image.url }}"
+                 style="width:100%; height:200px; object-fit:cover; border-radius:10px; margin-bottom:16px;">
+        {% else %}
+            <div style="width:100%; height:180px; background:#F5F5F7; border-radius:10px; margin-bottom:16px; display:flex; align-items:center; justify-content:center;">
+                <i class="ti ti-package" style="font-size:52px; color:#ccc;"></i>
+            </div>
+        {% endif %}
+
+        <div style="font-size:18px; font-weight:600; margin-bottom:4px;">{{ product.name }}</div>
+        <div style="font-size:12px; color:#888; margin-bottom:16px;">SKU: {{ product.sku }}</div>
+        <hr class="divider">
+        <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+            <div style="display:flex; justify-content:space-between;">
+                <span style="color:#888;">Narx</span>
+                <span style="font-weight:700; font-size:16px;">{{ product.price|floatformat:0 }} so'm</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span style="color:#888;">Skladda</span>
+                <span style="font-weight:600;">{{ product.stock }} dona
+                    {% if product.stock_status == 'out' %}
+                        <span class="badge badge-red" style="margin-left:6px;">Tugagan</span>
+                    {% elif product.stock_status == 'low' %}
+                        <span class="badge badge-amber" style="margin-left:6px;">Kam qoldi</span>
+                    {% else %}<span class="badge badge-green" style="margin-left:6px;">Yetarli</span>{% endif %}
+      </span>
+            </div>
+        </div>
+        {% if product.description %}
+            <hr class="divider">
+            <div style="font-size:13px; color:#555;">{{ product.description }}</div>
+        {% endif %}
+    </div>
+{% endblock %}

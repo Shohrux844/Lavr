@@ -7,18 +7,6 @@ urlpatterns = [
     # ─── Dashboard ────────────────────────────────────
     path('', views.dashboard, name='dashboard'),
 
-    # ─── Agentlar ─────────────────────────────────────
-    path('agents/', views.agent_list, name='agent_list'),
-    path('agents/create/', views.agent_create, name='agent_create'),
-    path('agents/<int:pk>/', views.agent_detail, name='agent_detail'),
-    path('agents/<int:pk>/edit/', views.agent_update, name='agent_update'),
-    path('agents/<int:pk>/delete/', views.agent_delete, name='agent_delete'),
-
-    # ─── Agent Ostatka (Balans) ────────────────────────
-    path('balances/', views.agent_balance_list, name='agent_balance_list'),
-    path('balances/create/', views.agent_balance_create, name='agent_balance_create'),
-    path('balances/<int:pk>/edit/', views.agent_balance_update, name='agent_balance_update'),
-
     # ─── Mijozlar ─────────────────────────────────────
     path('clientes/', views.cliente_list, name='cliente_list'),
     path('clientes/create/', views.cliente_create, name='cliente_create'),

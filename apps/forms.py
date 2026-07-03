@@ -1,8 +1,9 @@
 from django import forms
 from django.forms import inlineformset_factory
 
+from agent.models import AgentBalance
 from .models import (
-    Agent, AgentBalance, Cliente, Product, Order, OrderItem, Payment, Salary,
+    Agent, Cliente, Product, Order, OrderItem, Payment, Salary,
     PointOfInterest, Visit,
 )
 
