@@ -18,7 +18,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'admin',
+    'apps',
     'agent',
     'client'
 ]
@@ -34,7 +34,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "lavr.urls"
-AUTH_USER_MODEL = "admin.User"
+AUTH_USER_MODEL = "apps.User"
 
 TEMPLATES = [
     {

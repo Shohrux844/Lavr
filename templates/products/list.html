@@ -26,36 +26,40 @@
     </div>
     <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px;">
         {% for p in products %}
-            <div class="card" style="padding:16px;">
+            <div class="card" style="overflow:hidden;">
                 {% if p.image %}
-                    <img src="{{ p.image.url }}"
-                         style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:12px; border:1px solid #EBEBEB;">
+                    <div style="width:100%; height:300px; background:#F7F7F9; display:flex; align-items:center; justify-content:center;">
+                        <img src="{{ p.image.url }}"
+                             style="max-width:100%; max-height:100%; object-fit:contain; display:block;">
+                    </div>
                 {% else %}
-                    <div style="width:100%; height:120px; background:#F5F5F7; border-radius:8px; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+                    <div style="width:100%; height:180px; background:#F5F5F7; display:flex; align-items:center; justify-content:center;">
                         <i class="ti ti-package" style="font-size:36px; color:#ccc;"></i>
                     </div>
                 {% endif %}
-                <div style="font-size:14px; font-weight:500; margin-bottom:2px;">{{ p.name }}</div>
-                <div style="font-size:12px; color:#888; margin-bottom:10px;">{{ p.sku }}</div>
-                <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:10px;">
-                    <span style="color:#888;">Narx:</span><span style="font-weight:500;">{{ p.price|floatformat:0 }} so'm</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:12px;">
-                    <span style="color:#888;">Miqdor:</span>
-                    <span style="font-weight:600;">{{ p.stock }} dona
-                        {% if p.stock_status == 'out' %}
-                            <span class="badge badge-red" style="margin-left:4px;">Tugagan</span>
-                        {% elif p.stock_status == 'low' %}
-                            <span class="badge badge-amber" style="margin-left:4px;">Kam</span>{% endif %}
+                <div style="padding:16px;">
+                    <div style="font-size:14px; font-weight:500; margin-bottom:2px;">{{ p.name }}</div>
+                    <div style="font-size:12px; color:#888; margin-bottom:10px;">{{ p.sku }}</div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:10px;">
+                        <span style="color:#888;">Narx:</span><span style="font-weight:500;">{{ p.price|floatformat:0 }} so'm</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:12px;">
+                        <span style="color:#888;">Miqdor:</span>
+                        <span style="font-weight:600;">{{ p.stock }} dona
+                            {% if p.stock_status == 'out' %}
+                                <span class="badge badge-red" style="margin-left:4px;">Tugagan</span>
+                            {% elif p.stock_status == 'low' %}
+                                <span class="badge badge-amber" style="margin-left:4px;">Kam</span>{% endif %}
       </span>
-                </div>
-                <div style="display:flex; gap:6px;">
-                    <a href="{% url 'product_detail' p.pk %}" class="btn btn-sm"
-                       style="flex:1; justify-content:center;"><i class="ti ti-eye"></i></a>
-                    <a href="{% url 'product_update' p.pk %}" class="btn btn-sm"
-                       style="flex:1; justify-content:center;"><i class="ti ti-edit"></i></a>
-                    <a href="{% url 'product_delete' p.pk %}" class="btn btn-sm btn-danger"
-                       style="flex:1; justify-content:center;"><i class="ti ti-trash"></i></a>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <a href="{% url 'product_detail' p.pk %}" class="btn btn-sm"
+                           style="flex:1; justify-content:center;"><i class="ti ti-eye"></i></a>
+                        <a href="{% url 'product_update' p.pk %}" class="btn btn-sm"
+                           style="flex:1; justify-content:center;"><i class="ti ti-edit"></i></a>
+                        <a href="{% url 'product_delete' p.pk %}" class="btn btn-sm btn-danger"
+                           style="flex:1; justify-content:center;"><i class="ti ti-trash"></i></a>
+                    </div>
                 </div>
             </div>
         {% empty %}

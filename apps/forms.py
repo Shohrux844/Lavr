@@ -53,7 +53,7 @@ class OrderUpdateForm(forms.ModelForm):
     """
     Mavjud nakladnoyni tahrirlash uchun — status maydoni bilan.
     Yangi nakladnoy yaratishda status ishlatilmaydi (avtomatik 'pending'),
-    lekin tahrirlashda admin holatni qo'lda o'zgartirishi mumkin.
+    lekin tahrirlashda apps holatni qo'lda o'zgartirishi mumkin.
     """
 
     class Meta:

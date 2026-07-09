@@ -1,6 +1,150 @@
 {% extends "clients/base_client.html" %}
 {% block title %}Buyurtma berish{% endblock %}
 
+{% block extra_head %}
+    <style>
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .product-card {
+            background: #fff;
+            border: 1px solid #EBEBEB;
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-card.out-of-stock {
+            opacity: .55;
+        }
+
+        .product-card-img {
+            width: 100%;
+            height: 140px;
+            background: #F5F5F7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .product-card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-card-body {
+            padding: 10px 12px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .product-card-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .product-card-name {
+            font-size: 12.5px;
+            color: #444;
+            line-height: 1.35;
+            min-height: 32px;
+        }
+
+        .product-card-stock {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .stepper {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #F5F5F7;
+            border-radius: 10px;
+            padding: 4px;
+        }
+
+        .stepper button {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: #fff;
+            color: #534AB7;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+        }
+
+        .stepper button:disabled {
+            color: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .stepper input {
+            width: 100%;
+            text-align: center;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+
+        .stepper input::-webkit-outer-spin-button,
+        .stepper input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .add-btn {
+            margin-top: 8px;
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            background: #534AB7;
+            color: #fff;
+            padding: 9px 0;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .add-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .cart-bar {
+            position: sticky;
+            bottom: 12px;
+            margin-top: 16px;
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
     <div style="font-size:15px; font-weight:600; margin-bottom:12px;">Yangi buyurtma</div>
 
@@ -8,108 +152,142 @@
         <div class="alert alert-error">Formada xatolik bor, pastga qarang.</div>
     {% endif %}
 
-    <form method="post">
+    <form method="post" id="order-request-form">
         {% csrf_token %}
         {{ formset.management_form }}
-        <div class="card" style="padding:16px; margin-bottom:12px;">
-            <div id="formset-container">
-                {% for f in formset %}
-                    <div class="formset-row"
-                         style="display:grid; grid-template-columns:2fr 1fr auto; gap:8px; align-items:flex-end; margin-bottom:8px;">
-                        <div>
-                            {% if forloop.first %}<label class="form-label">Tovar</label>{% endif %}
-                            <select name="{{ f.product.html_name }}" class="form-control product-select"
-                                    onchange="fetchPrice(this)">
-                                <option value="">— Tanlang —</option>
-                                {% for p in f.fields.product.queryset %}
-                                    <option value="{{ p.pk }}" data-price="{{ p.price }}"
-                                            {% if f.product.value|stringformat:"s" == p.pk|stringformat:"s" %}selected{% endif %}>
-                                        {{ p.name }} — {{ p.price|floatformat:0 }} so'm ({{ p.stock }} dona)
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <input type="hidden" name="{{ f.price.html_name }}" class="price-input"
-                                   value="{{ f.price.value|default:'' }}">
-                        </div>
-                        <div>
-                            {% if forloop.first %}<label class="form-label">Miqdor</label>{% endif %}
-                            <input type="number" name="{{ f.quantity.html_name }}" class="form-control"
-                                   value="{{ f.quantity.value|default:1 }}" min="1">
-                        </div>
-                        <div {% if forloop.first %}style="padding-top:22px;"{% endif %}>
-                            <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)"><i
-                                    class="ti ti-trash"></i></button>
-                        </div>
-                        <div style="display:none;">{{ f.DELETE }}</div>
+
+        <!-- JS dinamik to'ldiradigan yashirin formset qatorlari -->
+        <div id="hidden-formset-rows" style="display:none;"></div>
+
+        <!-- Tovarlar katalogi -->
+        <div class="catalog-grid">
+            {% for p in formset.forms.0.fields.product.queryset %}
+                <div class="product-card {% if p.stock == 0 %}out-of-stock{% endif %}"
+                     data-product-id="{{ p.pk }}"
+                     data-price="{{ p.price }}"
+                     data-stock="{{ p.stock }}">
+                    <div class="product-card-img">
+                        {% if p.image %}
+                            <img src="{{ p.image.url }}" alt="{{ p.name }}">
+                        {% else %}
+                            <i class="ti ti-package" style="font-size:36px; color:#ccc;"></i>
+                        {% endif %}
                     </div>
-                {% endfor %}
+                    <div class="product-card-body">
+                        <div class="product-card-price">{{ p.price|floatformat:0 }} so'm</div>
+                        <div class="product-card-name">{{ p.name }}</div>
+                        <div class="product-card-stock">
+                            {% if p.stock > 0 %}
+                                <i class="ti ti-box"></i> Skladda: {{ p.stock }} dona
+                            {% else %}
+                                <span style="color:#A32D2D;"><i class="ti ti-x"></i> Tugagan</span>
+                            {% endif %}
+                        </div>
+
+                        {% if p.stock > 0 %}
+                            <div class="stepper">
+                                <button type="button" class="qty-minus" onclick="stepQty(this, -1)">−</button>
+                                <input type="number" class="qty-input" value="0" min="0" max="{{ p.stock }}"
+                                       inputmode="numeric"
+                                       onchange="clampQty(this)" oninput="syncFormset()">
+                                <button type="button" class="qty-plus" onclick="stepQty(this, 1)">+</button>
+                            </div>
+                        {% else %}
+                            <button class="add-btn" disabled style="margin-top:8px;">Tugagan</button>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <div style="grid-column:1/-1; text-align:center; color:#aaa; padding:32px;">Tovar topilmadi</div>
+            {% endfor %}
+        </div>
+
+        <!-- Savat / jami -->
+        <div class="card cart-bar" style="padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-size:13px; color:#888;">Tanlangan tovarlar:</span>
+                <span id="items-count" style="font-weight:600;">0 ta</span>
             </div>
-            <button type="button" class="btn" onclick="addRow()"><i class="ti ti-plus"></i> Tovar qo'shish</button>
-            <hr class="divider">
-            <div style="display:flex; justify-content:space-between; font-weight:600;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:16px; margin-bottom:12px;">
                 <span>Jami:</span><span id="total-sum">0 so'm</span>
             </div>
-        </div>
 
-        <div class="card" style="padding:16px; margin-bottom:12px;">
             <label class="form-label">Izoh (ixtiyoriy)</label>
-            {{ form.note }}
-        </div>
+            <div style="margin-bottom:12px;">{{ form.note }}</div>
 
-        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;">
-            <i class="ti ti-send"></i> So'rovni yuborish
-        </button>
+            <button type="submit" id="submit-btn" class="btn btn-primary" disabled
+                    style="width:100%; justify-content:center; padding:12px;">
+                <i class="ti ti-send"></i> So'rovni yuborish
+            </button>
+        </div>
     </form>
 {% endblock %}
 
 {% block extra_js %}
     <script>
-        function fetchPrice(select) {
-            const opt = select.options[select.selectedIndex];
-            const row = select.closest('.formset-row');
-            const priceInput = row.querySelector('.price-input');
-            if (opt.dataset.price) priceInput.value = opt.dataset.price;
-            calcTotal();
+        // Django formset maydon nomlari namunasi (masalan: "items-0-product")
+        const PRODUCT_NAME_PATTERN = "{{ formset.forms.0.product.html_name }}";
+        const QUANTITY_NAME_PATTERN = "{{ formset.forms.0.quantity.html_name }}";
+        const PRICE_NAME_PATTERN = "{{ formset.forms.0.price.html_name }}";
+
+        function stepQty(btn, delta) {
+            const card = btn.closest('.product-card');
+            const input = card.querySelector('.qty-input');
+            const max = parseInt(card.dataset.stock) || 0;
+            let val = (parseInt(input.value) || 0) + delta;
+            if (val < 0) val = 0;
+            if (val > max) val = max;
+            input.value = val;
+            syncFormset();
         }
 
-        function calcTotal() {
+        function clampQty(input) {
+            const card = input.closest('.product-card');
+            const max = parseInt(card.dataset.stock) || 0;
+            let val = parseInt(input.value) || 0;
+            if (val < 0) val = 0;
+            if (val > max) val = max;
+            input.value = val;
+            syncFormset();
+        }
+
+        function syncFormset() {
+            const container = document.getElementById('hidden-formset-rows');
+            container.innerHTML = '';
+            let idx = 0;
             let total = 0;
-            document.querySelectorAll('.formset-row').forEach(row => {
-                const price = parseFloat(row.querySelector('.price-input')?.value) || 0;
-                const qty = parseFloat(row.querySelector('input[name$="-quantity"]')?.value) || 0;
-                total += price * qty;
+            let itemsCount = 0;
+
+            document.querySelectorAll('.product-card').forEach(card => {
+                const input = card.querySelector('.qty-input');
+                if (!input) return;
+                const qty = parseInt(input.value) || 0;
+                if (qty > 0) {
+                    const pid = card.dataset.productId;
+                    const price = parseFloat(card.dataset.price) || 0;
+
+                    const productName = PRODUCT_NAME_PATTERN.replace(/-\d+-/, `-${idx}-`);
+                    const quantityName = QUANTITY_NAME_PATTERN.replace(/-\d+-/, `-${idx}-`);
+                    const priceName = PRICE_NAME_PATTERN.replace(/-\d+-/, `-${idx}-`);
+
+                    container.insertAdjacentHTML('beforeend', `
+                        <input type="hidden" name="${productName}" value="${pid}">
+                        <input type="hidden" name="${quantityName}" value="${qty}">
+                        <input type="hidden" name="${priceName}" value="${price}">
+                    `);
+
+                    total += price * qty;
+                    itemsCount += 1;
+                    idx++;
+                }
             });
+
+            document.querySelector('[name$="TOTAL_FORMS"]').value = idx;
             document.getElementById('total-sum').textContent = Math.round(total).toLocaleString() + " so'm";
+            document.getElementById('items-count').textContent = itemsCount + " ta";
+            document.getElementById('submit-btn').disabled = itemsCount === 0;
         }
 
-        function removeRow(btn) {
-            const row = btn.closest('.formset-row');
-            const del = row.querySelector('input[type=checkbox]');
-            if (del) {
-                del.checked = true;
-                row.style.display = 'none';
-            } else {
-                row.remove();
-            }
-            calcTotal();
-        }
-
-        function addRow() {
-            const container = document.getElementById('formset-container');
-            const totalForms = document.querySelector('[name$=TOTAL_FORMS]');
-            const idx = parseInt(totalForms.value);
-            const firstRow = container.querySelector('.formset-row');
-            const newRow = firstRow.cloneNode(true);
-            newRow.querySelectorAll('input, select').forEach(el => {
-                if (el.name) el.name = el.name.replace(/-\d+-/, `-${idx}-`);
-                if (el.type === 'checkbox') el.checked = false; else el.value = '';
-            });
-            newRow.style.display = '';
-            container.appendChild(newRow);
-            totalForms.value = idx + 1;
-        }
-
-        document.addEventListener('input', calcTotal);
-        calcTotal();
+        syncFormset();
     </script>
 {% endblock %}

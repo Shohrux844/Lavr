@@ -109,8 +109,8 @@ class Order(Model):
 # 7. Nakladnoy satrlari (OrderItem)
 # ──────────────────────────────────────────────
 class OrderItem(Model):
-    order = ForeignKey("admin.Order", on_delete=CASCADE, related_name='items')
-    product = ForeignKey("admin.Product", on_delete=CASCADE, related_name='order_items')
+    order = ForeignKey("apps.Order", on_delete=CASCADE, related_name='items')
+    product = ForeignKey("apps.Product", on_delete=CASCADE, related_name='order_items')
     quantity = PositiveIntegerField(default=1)
     price = IntegerField(help_text="Sotish paytidagi narx (o'zgarmasligi uchun saqlanadi)")
 
@@ -134,7 +134,7 @@ class Payment(Model):
         CASH = 'cash', "Naqd"
         BANK = 'bank', "Bank o'tkazmasi"
 
-    order = ForeignKey("admin.Order", on_delete=CASCADE, related_name='payments')
+    order = ForeignKey("apps.Order", on_delete=CASCADE, related_name='payments')
     amount = IntegerField()
     method = CharField(max_length=20, choices=Method.choices, default=Method.CASH)
     screenshot = ImageField(
@@ -242,7 +242,7 @@ class Visit(Model):
     Telegramga xabar yuborish shu yozuv asosida ishlaydi.
     """
     agent = ForeignKey("agent.Agent", on_delete=CASCADE, related_name='visits')
-    point = ForeignKey("admin.PointOfInterest", on_delete=CASCADE, related_name='visits')
+    point = ForeignKey("apps.PointOfInterest", on_delete=CASCADE, related_name='visits')
     latitude = FloatField(null=True, blank=True, help_text="Agent tashrif paytidagi GPS")
     longitude = FloatField(null=True, blank=True)
     note = TextField(blank=True)

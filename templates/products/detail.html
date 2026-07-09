@@ -2,93 +2,104 @@
 {% block title %}{{ product.name }}{% endblock %}
 
 {% block breadcrumb %}
-  <a href="{% url 'product_list' %}" style="color:#aaa;text-decoration:none;">Tovarlar</a> / {{ product.name }}
+    <a href="{% url 'product_list' %}" style="color:#aaa;text-decoration:none;">Tovarlar</a> / {{ product.name }}
 {% endblock %}
 
 {% block topbar_actions %}
-  <a href="{% url 'product_update' product.pk %}" class="btn"><i class="ti ti-edit"></i> Tahrirlash</a>
+    <a href="{% url 'product_update' product.pk %}" class="btn"><i class="ti ti-edit"></i> Tahrirlash</a>
 {% endblock %}
 
 {% block content %}
-<div style="display:grid; grid-template-columns:1fr 2fr; gap:16px;">
+    <div style="display:grid; grid-template-columns:1fr 2fr; gap:16px;">
 
-  <!-- Rasm + asosiy info -->
-  <div class="card" style="padding:20px;">
-    {% if product.image %}
-    <img src="{{ product.image.url }}" style="width:100%; height:200px; object-fit:cover; border-radius:10px; margin-bottom:16px; border:1px solid #EBEBEB;">
-    {% else %}
-    <div style="width:100%; height:200px; background:#F5F5F7; border-radius:10px; margin-bottom:16px; display:flex; align-items:center; justify-content:center;">
-      <i class="ti ti-package" style="font-size:48px; color:#ccc;"></i>
-    </div>
-    {% endif %}
+        <!-- Rasm + asosiy info -->
+        <div class="card" style="padding:20px;">
+            {% if product.image %}
+                <img src="{{ product.image.url }}"
+                     style="width:100%; height:300px; background:#F7F7F9; display:flex; align-items:center; justify-content:center;">
+            {% else %}
+                <div style="width:100%; height:200px; background:#F5F5F7; border-radius:10px; margin-bottom:16px; display:flex; align-items:center; justify-content:center;">
+                    <i class="ti ti-package" style="font-size:48px; color:#ccc;"></i>
+                </div>
+            {% endif %}
 
-    <div style="font-size:16px; font-weight:600; margin-bottom:2px;">{{ product.name }}</div>
-    <div style="font-size:12px; color:#888; margin-bottom:16px;">SKU: {{ product.sku }}</div>
+            <div style="font-size:16px; font-weight:600; margin-bottom:2px;">{{ product.name }}</div>
+            <div style="font-size:12px; color:#888; margin-bottom:16px;">SKU: {{ product.sku }}</div>
 
-    <hr class="divider">
-    <div style="font-size:13px;">
-      <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-        <span style="color:#888;">Narx</span>
-        <span style="font-weight:600;">{{ product.price|floatformat:0 }} so'm</span>
-      </div>
-      <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-        <span style="color:#888;">Skladda</span>
-        <span style="font-weight:600;">
+            <hr class="divider">
+            <div style="font-size:13px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span style="color:#888;">Narx</span>
+                    <span style="font-weight:600;">{{ product.price|floatformat:0 }} so'm</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span style="color:#888;">Skladda</span>
+                    <span style="font-weight:600;">
           {{ product.stock }} dona
-          {% if product.stock_status == 'out' %}
-            <span class="badge badge-red" style="margin-left:6px;">Tugagan</span>
-          {% elif product.stock_status == 'low' %}
-            <span class="badge badge-amber" style="margin-left:6px;">Kam</span>
-          {% else %}
-            <span class="badge badge-green" style="margin-left:6px;">Yetarli</span>
-          {% endif %}
+                        {% if product.stock_status == 'out' %}
+                            <span class="badge badge-red" style="margin-left:6px;">Tugagan</span>
+                        {% elif product.stock_status == 'low' %}
+                            <span class="badge badge-amber" style="margin-left:6px;">Kam</span>
+                        {% else %}
+                            <span class="badge badge-green" style="margin-left:6px;">Yetarli</span>
+                        {% endif %}
         </span>
-      </div>
-      <div style="display:flex; justify-content:space-between;">
-        <span style="color:#888;">Ogohlantirish chegarasi</span>
-        <span>{{ product.low_stock_threshold }} dona</span>
-      </div>
-    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#888;">Ogohlantirish chegarasi</span>
+                    <span>{{ product.low_stock_threshold }} dona</span>
+                </div>
+            </div>
 
-    {% if product.description %}
-    <hr class="divider">
-    <div style="font-size:12px; color:#888; margin-bottom:4px;">Tavsif</div>
-    <div style="font-size:13px;">{{ product.description }}</div>
-    {% endif %}
+            {% if product.description %}
+                <hr class="divider">
+                <div style="font-size:12px; color:#888; margin-bottom:4px;">Tavsif</div>
+                <div style="font-size:13px;">{{ product.description }}</div>
+            {% endif %}
 
-    <hr class="divider">
-    <a href="{% url 'product_delete' product.pk %}" class="btn btn-danger btn-sm" style="width:100%; justify-content:center;">
-      <i class="ti ti-trash"></i> O'chirish
-    </a>
-  </div>
-
-  <!-- So'nggi sotuvlar -->
-  <div class="card">
-    <div style="padding:14px 16px; border-bottom:1px solid #EBEBEB; font-size:14px; font-weight:500;">
-      So'nggi sotuvlar
-    </div>
-    <table class="table-base">
-      <thead>
-        <tr><th>Nakladnoy</th><th>Mijoz</th><th>Miqdor</th><th>Narx</th><th>Jami</th></tr>
-      </thead>
-      <tbody>
-        {% for item in recent_items %}
-        <tr>
-          <td>
-            <a href="{% url 'order_detail' item.order.pk %}" style="color:#534AB7; text-decoration:none; font-weight:500;">
-              {{ item.order.number }}
+            <hr class="divider">
+            <a href="{% url 'product_delete' product.pk %}" class="btn btn-danger btn-sm"
+               style="width:100%; justify-content:center;">
+                <i class="ti ti-trash"></i> O'chirish
             </a>
-          </td>
-          <td>{{ item.order.cliente }}</td>
-          <td>{{ item.quantity }}</td>
-          <td>{{ item.price|floatformat:0 }}</td>
-          <td style="font-weight:500;">{{ item.subtotal|floatformat:0 }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5" style="text-align:center; color:#aaa; padding:24px;">Hali sotilmagan</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+        </div>
+
+        <!-- So'nggi sotuvlar -->
+        <div class="card">
+            <div style="padding:14px 16px; border-bottom:1px solid #EBEBEB; font-size:14px; font-weight:500;">
+                So'nggi sotuvlar
+            </div>
+            <table class="table-base">
+                <thead>
+                <tr>
+                    <th>Nakladnoy</th>
+                    <th>Mijoz</th>
+                    <th>Miqdor</th>
+                    <th>Narx</th>
+                    <th>Jami</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in recent_items %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'order_detail' item.order.pk %}"
+                               style="color:#534AB7; text-decoration:none; font-weight:500;">
+                                {{ item.order.number }}
+                            </a>
+                        </td>
+                        <td>{{ item.order.cliente }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.price|floatformat:0 }}</td>
+                        <td style="font-weight:500;">{{ item.subtotal|floatformat:0 }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align:center; color:#aaa; padding:24px;">Hali sotilmagan</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}

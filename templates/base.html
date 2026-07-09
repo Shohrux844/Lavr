@@ -383,19 +383,19 @@
             <i class="ti ti-package"></i> Tovarlar
         </a>
 
-        <div class="nav-section">Maydon ishi</div>
-        <a href="{% url 'point_map' %}"
-           class="nav-link {% if request.resolver_match.url_name == 'point_map' %}active{% endif %}">
-            <i class="ti ti-map"></i> Xarita
-        </a>
-        <a href="{% url 'point_list' %}"
-           class="nav-link {% if request.resolver_match.url_name in 'point_list,point_create,point_update' %}active{% endif %}">
-            <i class="ti ti-building-warehouse"></i> AZS / Do'konlar
-        </a>
-        <a href="{% url 'visit_list' %}"
-           class="nav-link {% if 'visit' in request.resolver_match.url_name %}active{% endif %}">
-            <i class="ti ti-map-pin-check"></i> Tashriflar
-        </a>
+{#        <div class="nav-section">Maydon ishi</div>#}
+{#        <a href="{% url 'point_map' %}"#}
+{#           class="nav-link {% if request.resolver_match.url_name == 'point_map' %}active{% endif %}">#}
+{#            <i class="ti ti-map"></i> Xarita#}
+{#        </a>#}
+{#        <a href="{% url 'point_list' %}"#}
+{#           class="nav-link {% if request.resolver_match.url_name in 'point_list,point_create,point_update' %}active{% endif %}">#}
+{#            <i class="ti ti-building-warehouse"></i> AZS / Do'konlar#}
+{#        </a>#}
+{#        <a href="{% url 'visit_list' %}"#}
+{#           class="nav-link {% if 'visit' in request.resolver_match.url_name %}active{% endif %}">#}
+{#            <i class="ti ti-map-pin-check"></i> Tashriflar#}
+{#        </a>#}
 
         <div class="nav-section">Agentlar</div>
         <a href="{% url 'agent_list' %}"

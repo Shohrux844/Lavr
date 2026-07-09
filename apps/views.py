@@ -866,6 +866,12 @@ def order_request_approve(request, pk):
         messages.warning(request, "Bu so'rov allaqachon ko'rib chiqilgan.")
         return redirect('order_request_detail', pk=pk)
 
+    # ─── Nakladnoy rasmi majburiy ───
+    nak_picture = request.FILES.get('nak_picture')
+    if not nak_picture:
+        messages.error(request, "Tasdiqlashdan oldin nakladnoy rasmini yuklashingiz shart.")
+        return redirect('order_request_detail', pk=pk)
+
     items = list(req.items.select_related('product').all())
     if not items:
         messages.error(request, "So'rovda tovar yo'q.")
@@ -890,6 +896,7 @@ def order_request_approve(request, pk):
         agent=agent,
         payment_type=Order.PaymentType.DEBT,
         note=req.note,
+        nak_picture=nak_picture,
     )
     total = 0
     for item in items:

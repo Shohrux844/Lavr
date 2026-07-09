@@ -1,0 +1,122 @@
+{% extends "clients/base_client.html" %}
+{% block title %}{{ order.number }}{% endblock %}
+
+{% block content %}
+    <a href="{% url 'client_payment_list' %}"
+       style="font-size:13px; color:#534AB7; text-decoration:none; display:inline-flex; align-items:center; gap:4px; margin-bottom:12px;">
+        <i class="ti ti-arrow-left"></i> To'lovlarim
+    </a>
+
+    <!-- Asosiy ma'lumot -->
+    <div class="card" style="padding:16px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+            <div>
+                <div style="font-size:18px; font-weight:600;">{{ order.number }}</div>
+                <div style="font-size:12px; color:#888; margin-top:2px;">
+                    <i class="ti ti-calendar"></i> {{ order.date_created|date:"d.m.Y H:i" }}
+                </div>
+            </div>
+            {% if order.status == 'paid' %}
+                <span class="badge badge-green">To'langan</span>
+            {% elif order.status == 'debt' %}
+                <span class="badge badge-red">Qarz</span>
+            {% elif order.status == 'pending' %}
+                <span class="badge badge-amber">Kutilmoqda</span>
+            {% else %}
+                <span class="badge badge-gray">Bekor qilingan</span>
+            {% endif %}
+        </div>
+        <hr class="divider">
+        <div style="font-size:13px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between;">
+                <span style="color:#888;">Agent</span><span style="font-weight:500;">{{ order.agent }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span style="color:#888;">To'lov turi</span><span>{{ order.get_payment_type_display }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span style="color:#888;">Jami summa</span>
+                <span style="font-weight:700; font-size:16px;">{{ order.total_sum|floatformat:0 }} so'm</span>
+            </div>
+        </div>
+        {% if order.note %}
+            <hr class="divider">
+            <div style="font-size:12px; color:#888; margin-bottom:4px;">Izoh</div>
+            <div style="font-size:13px;">{{ order.note }}</div>
+        {% endif %}
+    </div>
+
+    <!-- Nakladnoy rasmi -->
+    {% if order.nak_picture %}
+        <div class="card" style="padding:16px; margin-bottom:12px;">
+            <div style="font-size:12px; color:#888; margin-bottom:8px;">
+                <i class="ti ti-photo"></i> Nakladnoy rasmi
+            </div>
+            <img src="{{ order.nak_picture.url }}" style="width:100%; border-radius:8px; border:1px solid #EBEBEB;">
+        </div>
+    {% endif %}
+
+    <!-- Tovarlar -->
+    <div style="font-size:13px; font-weight:500; margin-bottom:8px;">Olingan tovarlar</div>
+    <div class="card" style="overflow:hidden; margin-bottom:12px;">
+        {% for item in order.items.all %}
+            <div style="padding:12px 14px; border-bottom:1px solid #EBEBEB; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-size:13px; font-weight:500;">{{ item.product.name }}</div>
+                    <div style="font-size:11px; color:#888; margin-top:2px;">
+                        {{ item.price|floatformat:0 }} so'm × {{ item.quantity }} dona
+                    </div>
+                </div>
+                <div style="font-weight:600;">{{ item.subtotal|floatformat:0 }}</div>
+            </div>
+        {% empty %}
+            <div style="text-align:center; color:#aaa; padding:20px; font-size:13px;">Tovar yo'q</div>
+        {% endfor %}
+    </div>
+
+    <!-- To'lov holati -->
+    <div class="card" style="padding:16px; margin-bottom:12px;">
+        <div style="font-size:13px; font-weight:500; margin-bottom:12px;">To'lov holati</div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:13px;">
+            <span style="color:#888;">Jami summa:</span>
+            <span style="font-weight:600;">{{ order.total_sum|floatformat:0 }} so'm</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:13px;">
+            <span style="color:#888;">To'langan:</span>
+            <span style="font-weight:600; color:#3B6D11;">{{ total_paid|floatformat:0 }} so'm</span>
+        </div>
+        <hr class="divider">
+        <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:700;">
+            <span>Qolgan qarz:</span>
+            <span style="color:{% if remaining_debt > 0 %}#A32D2D{% else %}#3B6D11{% endif %};">
+                {{ remaining_debt|floatformat:0 }} so'm
+            </span>
+        </div>
+    </div>
+
+    <!-- Shu nakladnoy bo'yicha to'lovlar tarixi -->
+    <div style="font-size:13px; font-weight:500; margin-bottom:8px;">To'lovlar tarixi</div>
+    <div class="card" style="overflow:hidden;">
+        {% for p in payments %}
+            <div style="padding:12px 14px; border-bottom:1px solid #EBEBEB; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-size:13px; font-weight:500;">{{ p.date_created|date:"d.m.Y H:i" }}</div>
+                    <div style="font-size:11px; color:#888; margin-top:2px;">
+                        {% if p.method == 'cash' %}<i class="ti ti-cash"></i> Naqd
+                        {% else %}<i class="ti ti-building-bank"></i> Bank o'tkazmasi{% endif %}
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-weight:600;">{{ p.amount|floatformat:0 }} so'm</div>
+                    {% if p.confirmed %}
+                        <span class="badge badge-green">Tasdiqlangan</span>
+                    {% else %}
+                        <span class="badge badge-amber">Kutilmoqda</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div style="text-align:center; color:#aaa; padding:20px; font-size:13px;">Hali to'lov yo'q</div>
+        {% endfor %}
+    </div>
+{% endblock %}

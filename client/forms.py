@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from admin.models import Product
+from apps.models import Product
 from client.models import Cliente, OrderRequest, OrderRequestItem
 
 ATTRS = {'class': 'form-control'}

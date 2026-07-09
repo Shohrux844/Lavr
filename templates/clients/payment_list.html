@@ -23,20 +23,37 @@
         {% endfor %}
     </div>
 
-    <div style="font-size:13px; font-weight:500; margin-bottom:8px;">Nakladnoylar (rasmlari bilan)</div>
+    <div style="font-size:13px; font-weight:500; margin-bottom:8px;">Nakladnoylar</div>
     <div style="display:flex; flex-direction:column; gap:10px;">
         {% for order in orders %}
-            <div class="card" style="padding:14px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                    <span style="font-weight:600;">{{ order.number }}</span>
-                    <span style="font-weight:600;">{{ order.total_sum|floatformat:0 }} so'm</span>
+            <a href="{% url 'client_order_detail' order.pk %}" style="text-decoration:none; color:inherit;">
+                <div class="card" style="padding:14px; display:flex; gap:12px; align-items:center;">
+                    {% if order.nak_picture %}
+                        <img src="{{ order.nak_picture.url }}"
+                             style="width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid #EBEBEB; flex-shrink:0;">
+                    {% else %}
+                        <div style="width:56px; height:56px; background:#F5F5F7; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="ti ti-file-invoice" style="font-size:22px; color:#ccc;"></i>
+                        </div>
+                    {% endif %}
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-weight:600; font-size:14px;">{{ order.number }}</span>
+                            {% if order.status == 'paid' %}<span class="badge badge-green">To'langan</span>
+                            {% elif order.status == 'debt' %}<span class="badge badge-red">Qarz</span>
+                            {% elif order.status == 'pending' %}<span class="badge badge-amber">Kutilmoqda</span>
+                            {% else %}<span class="badge badge-gray">Bekor</span>{% endif %}
+                        </div>
+                        <div style="font-size:11px; color:#888; margin-top:2px;">{{ order.date_created|date:"d.m.Y H:i" }}</div>
+                        <div style="font-size:13px; font-weight:600; margin-top:4px;">{{ order.total_sum|floatformat:0 }}
+                            so'm
+                        </div>
+                    </div>
+                    <i class="ti ti-chevron-right" style="color:#ccc; flex-shrink:0;"></i>
                 </div>
-                {% if order.nak_picture %}
-                    <img src="{{ order.nak_picture.url }}" style="width:100%; border-radius:8px; margin-top:6px;">
-                {% endif %}
-            </div>
+            </a>
         {% empty %}
-            <div style="text-align:center; color:#aaa; padding:24px; font-size:13px;">Nakladnoy yo'q</div>
+            <div class="card" style="text-align:center; color:#aaa; padding:24px; font-size:13px;">Nakladnoy yo'q</div>
         {% endfor %}
     </div>
 {% endblock %}

@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}So'rov #{{ req.pk }}{% endblock %}
+{% block breadcrumb %}
+    <a href="{% url 'order_request_list' %}" style="color:#aaa;text-decoration:none;">Buyurtma so'rovlari</a> /
+    #{{ req.pk }}
+{% endblock %}
+
+{% block content %}
+    <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:16px;">
+
+        <!-- Chap: tovarlar -->
+        <div>
+            <div class="card" style="margin-bottom:16px;">
+                <div style="padding:14px 16px; border-bottom:1px solid #EBEBEB; font-size:14px; font-weight:500;">
+                    Tovarlar
+                </div>
+                <table class="table-base">
+                    <thead>
+                    <tr>
+                        <th>Tovar</th>
+                        <th>SKU</th>
+                        <th>Narx</th>
+                        <th>Miqdor</th>
+                        <th>Skladda</th>
+                        <th>Jami</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in req.items.all %}
+                        <tr>
+                            <td style="font-weight:500;">{{ item.product.name }}</td>
+                            <td style="color:#888;">{{ item.product.sku }}</td>
+                            <td>{{ item.price|floatformat:0 }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>
+                                {% if item.quantity > item.product.stock %}
+                                    <span style="color:#A32D2D; font-weight:600;">{{ item.product.stock }} dona
+                                    <i class="ti ti-alert-triangle" title="Yetarli emas"></i></span>
+                                {% else %}
+                                    {{ item.product.stock }} dona
+                                {% endif %}
+                            </td>
+                            <td style="font-weight:500;">{{ item.subtotal|floatformat:0 }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align:center; color:#aaa; padding:20px;">Tovar yo'q</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div style="padding:14px 16px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #EBEBEB;">
+                    <span style="font-size:14px; font-weight:600;">Jami:</span>
+                    <span style="font-size:16px; font-weight:700; color:#534AB7;">{{ req.total_sum|floatformat:0 }} so'm</span>
+                </div>
+            </div>
+
+            {% if req.note %}
+                <div class="card" style="padding:16px;">
+                    <div style="font-size:12px; color:#888; margin-bottom:4px;">Mijoz izohi</div>
+                    <div style="font-size:13px;">{{ req.note }}</div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- O'ng: holat + amallar -->
+        <div>
+            <div class="card" style="padding:20px; margin-bottom:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+                    <div>
+                        <div style="font-size:16px; font-weight:600;">So'rov #{{ req.pk }}</div>
+                        <div style="font-size:12px; color:#888; margin-top:2px;">{{ req.date_created|date:"d.m.Y H:i" }}</div>
+                    </div>
+                    {% if req.status == 'pending' %}
+                        <span class="badge badge-amber" style="font-size:12.5px; padding:5px 12px;">Kutilmoqda</span>
+                    {% elif req.status == 'approved' %}
+                        <span class="badge badge-green" style="font-size:12.5px; padding:5px 12px;">Tasdiqlangan</span>
+                    {% else %}
+                        <span class="badge badge-red" style="font-size:12.5px; padding:5px 12px;">Rad etilgan</span>
+                    {% endif %}
+                </div>
+
+                <hr class="divider">
+
+                <div style="font-size:13px; display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#888;">Mijoz</span>
+                        <a href="{% url 'cliente_detail' req.cliente.pk %}"
+                           style="color:#534AB7; text-decoration:none; font-weight:500;">
+                            {{ req.cliente }}
+                        </a>
+                    </div>
+                    {% if req.cliente.firma_name %}
+                        <div style="display:flex; justify-content:space-between;">
+                            <span style="color:#888;">Firma</span><span>{{ req.cliente.firma_name }}</span>
+                        </div>
+                    {% endif %}
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#888;">Telefon</span><span>{{ req.cliente.phone|default:"—" }}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#888;">Agent</span><span>{{ req.cliente.agent|default:"—" }}</span>
+                    </div>
+                </div>
+
+                {% if req.date_reviewed %}
+                    <hr class="divider">
+                    <div style="font-size:12px; color:#888;">
+                        Ko'rib chiqilgan sana: {{ req.date_reviewed|date:"d.m.Y H:i" }}
+                    </div>
+                {% endif %}
+
+                {% if req.order %}
+                    <hr class="divider">
+                    <a href="{% url 'order_detail' req.order.pk %}" class="btn"
+                       style="width:100%; justify-content:center; background:#EAF3DE; color:#3B6D11; border-color:#C0DD97;">
+                        <i class="ti ti-file-invoice"></i> Nakladnoy: {{ req.order.number }}
+                    </a>
+                {% endif %}
+
+                {% if req.status == 'rejected' and req.admin_note %}
+                    <hr class="divider">
+                    <div style="font-size:12px; color:#888; margin-bottom:4px;">Rad etish sababi</div>
+                    <div class="alert alert-error" style="margin:0;">{{ req.admin_note }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Amallar — faqat "kutilmoqda" holatida -->
+            {% if req.status == 'pending' %}
+                <div class="card" style="padding:20px;">
+                    <div style="font-size:13px; font-weight:600; margin-bottom:12px;">Amallar</div>
+
+                    <form method="post" action="{% url 'order_request_approve' req.pk %}"
+                          enctype="multipart/form-data" style="margin-bottom:16px;">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label class="form-label">Nakladnoy rasmi *</label>
+                            <input type="file" name="nak_picture" accept="image/*" class="form-control" required>
+                            <div style="font-size:11px; color:#aaa; margin-top:3px;">
+                                Tasdiqlashdan oldin nakladnoy rasmini yuklash shart.
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;"
+                                onclick="return confirm('So\'rovni tasdiqlaysizmi? Skladdan tovar ayiriladi va nakladnoy avtomatik yaratiladi.');">
+                            <i class="ti ti-check"></i> Tasdiqlash
+                        </button>
+                    </form>
+
+                    <hr class="divider">
+
+                    <form method="post" action="{% url 'order_request_reject' req.pk %}">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label class="form-label">Rad etish sababi (ixtiyoriy)</label>
+                            <textarea name="admin_note" class="form-control" rows="3"
+                                      placeholder="Masalan: tovar yetarli emas..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger" style="width:100%; justify-content:center;"
+                                onclick="return confirm('So\'rovni rad etasizmi?');">
+                            <i class="ti ti-x"></i> Rad etish
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

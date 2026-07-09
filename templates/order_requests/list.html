@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Buyurtma so'rovlari{% endblock %}
+{% block breadcrumb %}
+    <a href="{% url 'dashboard' %}" style="color:#aaa;text-decoration:none;">Dashboard</a> /
+    Buyurtma so'rovlari
+{% endblock %}
+
+{% block content %}
+    <!-- Filter paneli -->
+    <div class="card" style="padding:14px 16px; margin-bottom:16px;">
+        <form method="get" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+            <div>
+                <label class="form-label">Holat</label>
+                <select name="status" class="form-control" style="width:190px;">
+                    <option value="">Hammasi</option>
+                    {% for val, label in status_choices %}
+                        <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="ti ti-filter"></i> Qo'llash</button>
+            {% if status_filter %}
+                <a href="{% url 'order_request_list' %}" class="btn">Tozalash</a>
+            {% endif %}
+
+            {% if pending_count %}
+                <div style="margin-left:auto;">
+                    <span class="badge badge-amber" style="font-size:12.5px; padding:6px 12px;">
+                        <i class="ti ti-clock"></i> {{ pending_count }} ta kutilmoqda
+                    </span>
+                </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="card">
+        <div style="overflow-x:auto;">
+            <table class="table-base">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Mijoz</th>
+                    <th>Firma</th>
+                    <th>Sana</th>
+                    <th>Tovarlar</th>
+                    <th>Jami summa</th>
+                    <th>Holat</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for r in requests %}
+                    <tr>
+                        <td style="font-weight:500;">#{{ r.pk }}</td>
+                        <td>
+                            <a href="{% url 'order_request_detail' r.pk %}"
+                               style="color:#534AB7; text-decoration:none; font-weight:500;">
+                                {{ r.cliente }}
+                            </a>
+                        </td>
+                        <td style="color:#888;">{{ r.cliente.firma_name|default:"—" }}</td>
+                        <td style="color:#888; font-size:12px;">{{ r.date_created|date:"d.m.Y H:i" }}</td>
+                        <td>{{ r.items.count }} ta</td>
+                        <td style="font-weight:500;">{{ r.total_sum|floatformat:0 }}</td>
+                        <td>
+                            {% if r.status == 'pending' %}
+                                <span class="badge badge-amber">Kutilmoqda</span>
+                            {% elif r.status == 'approved' %}
+                                <span class="badge badge-green">Tasdiqlangan</span>
+                            {% else %}
+                                <span class="badge badge-red">Rad etilgan</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:4px;">
+                                <a href="{% url 'order_request_detail' r.pk %}" class="btn btn-sm">
+                                    <i class="ti ti-eye"></i>
+                                    {% if r.status == 'pending' %} Ko'rish / Tasdiqlash{% endif %}
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align:center; color:#aaa; padding:32px;">So'rov topilmadi</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

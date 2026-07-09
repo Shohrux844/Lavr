@@ -12,7 +12,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('apps/', admin.site.urls),
 
     # ─── Login / Logout ───────────────────────────────
     # Bu Django'ning standart LoginView/LogoutView'idan foydalanadi
@@ -20,8 +20,8 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
 
-    # ─── Asosiy app (admin.urls — sizning app nomingiz bo'yicha o'zgartiring) ───
-    path('', include('admin.urls')),
+    # ─── Asosiy app (apps.urls — sizning app nomingiz bo'yicha o'zgartiring) ───
+    path('', include('apps.urls')),
     path('agent/', include('agent.urls')),
     path('client/', include('client.urls')),
 ]

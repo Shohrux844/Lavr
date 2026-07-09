@@ -3,7 +3,7 @@ agent/urls.py
 
 DIQQAT: bu fayl ikkita guruh URL ni birlashtiradi:
   1. Admin uchun: agentlar boshqaruvi (/agents/...)
-     Ular asosiy admin/urls.py dagi URL'larni shu app'ga ko'chirildi.
+     Ular asosiy apps/urls.py dagi URL'larni shu app'ga ko'chirildi.
   2. Agent panel uchun: /agent/... prefix bilan project urls.py da include qilinadi.
 """
 from django.urls import path

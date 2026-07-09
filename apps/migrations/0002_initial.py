@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="items",
-                to="admin.order",
+                to="apps.order",
             ),
         ),
         migrations.AddField(
@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="payments",
-                to="admin.order",
+                to="apps.order",
             ),
         ),
         migrations.AddField(
@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="order_items",
-                to="admin.product",
+                to="apps.product",
             ),
         ),
         migrations.AddField(
@@ -87,7 +87,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="visits",
-                to="admin.pointofinterest",
+                to="apps.pointofinterest",
             ),
         ),
         migrations.AlterUniqueTogether(

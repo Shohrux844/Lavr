@@ -20,79 +20,71 @@
             color: #1a1a1a;
         }
 
+        .sidebar {
+            width: 220px;
+            min-height: 100vh;
+            background: #fff;
+            border-right: 1px solid #EBEBEB;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            margin-left: 220px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
         .topbar {
+            height: 52px;
             background: #fff;
             border-bottom: 1px solid #EBEBEB;
-            padding: 0 16px;
-            height: 52px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             position: sticky;
             top: 0;
             z-index: 30;
-        }
-
-        .topbar-brand {
-            font-size: 14px;
-            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: space-between;
+            padding: 0 20px;
         }
 
-        .topbar-brand span {
-            color: #534AB7;
-        }
-
-        .topbar-user {
-            font-size: 12px;
-            color: #888;
+        .nav-link {
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #fff;
-            border-top: 1px solid #EBEBEB;
-            display: flex;
-            z-index: 30;
-        }
-
-        .nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 8px 4px 10px;
-            font-size: 10px;
-            color: #888;
+            padding: 9px 16px;
+            font-size: 13.5px;
+            color: #555;
+            border-radius: 8px;
+            margin: 1px 8px;
+            transition: background .12s, color .12s;
             text-decoration: none;
-            gap: 3px;
-            transition: color .12s;
         }
 
-        .nav-item i {
-            font-size: 20px;
+        .nav-link:hover {
+            background: #F5F5F7;
+            color: #1a1a1a;
         }
 
-        .nav-item.active {
+        .nav-link.active {
+            background: #EEEDFE;
             color: #534AB7;
+            font-weight: 500;
         }
 
-        .nav-item.active i {
-            color: #534AB7;
+        .nav-link i {
+            font-size: 17px;
         }
 
         .main {
-            padding: 16px;
-            padding-bottom: 72px;
+            padding: 24px;
+            flex: 1;
         }
 
         .card {
@@ -108,14 +100,15 @@
         }
 
         .stat-label {
-            font-size: 11px;
+            font-size: 12px;
             color: #888;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
         }
 
         .stat-val {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 600;
+            color: #1a1a1a;
         }
 
         .badge {
@@ -161,7 +154,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 14px;
+            padding: 7px 14px;
             font-size: 13px;
             border-radius: 8px;
             border: 1px solid #DDDDE3;
@@ -169,12 +162,27 @@
             cursor: pointer;
             color: #333;
             text-decoration: none;
+            transition: background .12s;
+        }
+
+        .btn:hover {
+            background: #F5F5F7;
         }
 
         .btn-primary {
             background: #534AB7;
             color: #fff;
             border-color: #534AB7;
+        }
+
+        .btn-primary:hover {
+            background: #3C3489;
+        }
+
+        .btn-danger {
+            background: #FCEBEB;
+            color: #A32D2D;
+            border-color: #F7C1C1;
         }
 
         .btn-sm {
@@ -189,12 +197,22 @@
             border: 1px solid #DDDDE3;
             border-radius: 8px;
             background: #fff;
+            color: #1a1a1a;
             outline: none;
+            transition: border .12s;
         }
 
         .form-control:focus {
             border-color: #534AB7;
             box-shadow: 0 0 0 3px #EEEDFE;
+        }
+
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 32px;
         }
 
         .form-label {
@@ -233,6 +251,7 @@
             color: #888;
             font-weight: 500;
             border-bottom: 1px solid #EBEBEB;
+            white-space: nowrap;
         }
 
         .table-base td {
@@ -243,6 +262,24 @@
 
         .table-base tr:last-child td {
             border-bottom: none;
+        }
+
+        .table-base tr:hover td {
+            background: #FAFAFA;
+        }
+
+        .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #EEEDFE;
+            color: #534AB7;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
         .alert {
@@ -266,63 +303,97 @@
             color: #A32D2D;
             border: 1px solid #F7C1C1;
         }
+
+        .alert-warning {
+            background: #FAEEDA;
+            color: #633806;
+            border: 1px solid #FAC775;
+        }
+
+        .alert-info {
+            background: #E6F1FB;
+            color: #185FA5;
+            border: 1px solid #B5D4F4;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
 
-<header class="topbar">
-    <div class="topbar-brand">
-        <span>●</span> SavdoTizim
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div style="padding:16px 18px 12px; border-bottom:1px solid #EBEBEB;">
+        <span style="font-size:15px; font-weight:600;">
+            <span style="color:#534AB7;">●</span> SavdoTizim
+        </span>
+        <div style="font-size:11px; color:#aaa; margin-top:2px;">Agent panel</div>
     </div>
-    <div class="topbar-user">
-        {% if request.user.is_authenticated %}
-            {{ request.user.agent_profile }}
-        {% endif %}
-        <a href="{% url 'logout' %}" style="color:#A32D2D; text-decoration:none; font-size:12px;">
-            <i class="ti ti-logout" style="font-size:16px;"></i>
+
+    <nav style="flex:1; padding:8px 0; overflow-y:auto;">
+        <a href="{% url 'agent_dashboard' %}"
+           class="nav-link {% if request.resolver_match.url_name == 'agent_dashboard' %}active{% endif %}">
+            <i class="ti ti-layout-dashboard"></i> Bosh sahifa
         </a>
-    </div>
-</header>
+        <a href="{% url 'agent_order_list' %}"
+           class="nav-link {% if 'agent_order' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-file-invoice"></i> Nakladnoylar
+        </a>
+        <a href="{% url 'agent_road_tracking' %}"
+           class="nav-link {% if 'agent_road' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-navigation"></i> Yo'lda
+        </a>
+        <a href="{% url 'agent_cliente_list' %}"
+           class="nav-link {% if 'agent_cliente' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-building-store"></i> Mijozlar
+        </a>
+        <a href="{% url 'agent_product_list' %}"
+           class="nav-link {% if 'agent_product' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-package"></i> Tovarlar
+        </a>
+    </nav>
 
-{% if messages %}
-    <div style="padding: 8px 16px 0;">
-        {% for msg in messages %}
-            <div class="alert alert-{{ msg.tags }}">
-                <i class="ti ti-{% if msg.tags == 'success' %}circle-check{% else %}alert-triangle{% endif %}"
-                   style="font-size:15px;flex-shrink:0;"></i>
-                {{ msg }}
+    <div style="padding:12px 18px; border-top:1px solid #EBEBEB;">
+        {% if request.user.is_authenticated %}
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div class="avatar">{{ request.user.username|slice:":2"|upper }}</div>
+                <div style="flex:1;">
+                    <div style="font-size:12.5px; font-weight:500;">{{ request.user.agent_profile }}</div>
+                    <a href="{% url 'logout' %}" style="color:#A32D2D; text-decoration:none; font-size:11.5px;">
+                        <i class="ti ti-logout"></i> Chiqish
+                    </a>
+                </div>
             </div>
-        {% endfor %}
+        {% endif %}
     </div>
-{% endif %}
+</aside>
 
-<main class="main">
-    {% block content %}{% endblock %}
-</main>
+<!-- MAIN -->
+<div class="main-content">
+    <header class="topbar">
+        <nav style="font-size:13px; color:#888;">
+            {% block breadcrumb %}{% endblock %}
+        </nav>
+        <div style="display:flex; align-items:center; gap:10px;">
+            {% block topbar_actions %}{% endblock %}
+        </div>
+    </header>
 
-<nav class="bottom-nav">
-    <a href="{% url 'agent_dashboard' %}"
-       class="nav-item {% if request.resolver_match.url_name == 'agent_dashboard' %}active{% endif %}">
-        <i class="ti ti-layout-dashboard"></i>Bosh
-    </a>
-    <a href="{% url 'agent_order_list' %}"
-       class="nav-item {% if 'agent_order' in request.resolver_match.url_name %}active{% endif %}">
-        <i class="ti ti-file-invoice"></i>Nakladnoy
-    </a>
-    <a href="{% url 'agent_road_tracking' %}"
-       class="nav-item {% if 'agent_road' in request.resolver_match.url_name %}active{% endif %}">
-        <i class="ti ti-navigation"></i>Yo'lda
-    </a>
-    <a href="{% url 'agent_cliente_list' %}"
-       class="nav-item {% if 'agent_cliente' in request.resolver_match.url_name %}active{% endif %}">
-        <i class="ti ti-building-store"></i>Mijozlar
-    </a>
-    <a href="{% url 'agent_product_list' %}"
-       class="nav-item {% if 'agent_product' in request.resolver_match.url_name %}active{% endif %}">
-        <i class="ti ti-package"></i>Tovarlar
-    </a>
-</nav>
+    {% if messages %}
+        <div style="padding: 12px 24px 0;">
+            {% for msg in messages %}
+                <div class="alert alert-{{ msg.tags }}">
+                    <i class="ti ti-{% if msg.tags == 'success' %}circle-check{% else %}alert-triangle{% endif %}"
+                       style="font-size:15px;flex-shrink:0;"></i>
+                    {{ msg }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+</div>
 
 {% block extra_js %}{% endblock %}
 </body>

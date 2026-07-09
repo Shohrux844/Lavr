@@ -1,6 +1,6 @@
 """
 Excel va PDF eksport funksiyalari.
-Bu faylni admin/exports.py sifatida saqlang.
+Bu faylni apps/exports.py sifatida saqlang.
 """
 import io
 from datetime import date
