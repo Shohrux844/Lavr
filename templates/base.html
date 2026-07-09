@@ -372,6 +372,10 @@
            class="nav-link {% if 'cliente' in request.resolver_match.url_name %}active{% endif %}">
             <i class="ti ti-building-store"></i> Mijozlar
         </a>
+        <a href="{% url 'order_request_list' %}"
+           class="nav-link {% if 'order_request' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-shopping-cart"></i> Buyurtma so'rovlari
+        </a>
 
         <div class="nav-section">Sklad</div>
         <a href="{% url 'product_list' %}"

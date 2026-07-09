@@ -1,0 +1,57 @@
+{% extends "clients/base_client.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+    <div style="font-size:14px; font-weight:600; margin-bottom:12px;">Salom, {{ cliente.first_name }} 👋</div>
+
+    <div class="stat-card" style="margin-bottom:16px;">
+        <div class="stat-label">Jami qarzingiz</div>
+        <div class="stat-val" style="color:{% if debt > 0 %}#A32D2D{% else %}#3B6D11{% endif %};">
+            {{ debt|floatformat:0 }} so'm
+        </div>
+        <div style="font-size:11px; color:#888; margin-top:4px;">
+            Jami xarid: {{ total_sales|floatformat:0 }} · To'langan: {{ total_paid|floatformat:0 }}
+        </div>
+    </div>
+
+    <a href="{% url 'client_order_request_create' %}" class="btn btn-primary"
+       style="width:100%; justify-content:center; margin-bottom:16px; padding:12px;">
+        <i class="ti ti-shopping-cart-plus"></i> Yangi buyurtma berish
+    </a>
+
+    <div style="font-size:13px; font-weight:500; margin-bottom:8px;">So'nggi so'rovlarim</div>
+    <div class="card" style="overflow:hidden; margin-bottom:16px;">
+        {% for r in recent_requests %}
+            <a href="{% url 'client_order_request_detail' r.pk %}"
+               style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid #EBEBEB; text-decoration:none; color:inherit;">
+                <div>
+                    <div style="font-size:13px; font-weight:500;">So'rov #{{ r.pk }}</div>
+                    <div style="font-size:11px; color:#888;">{{ r.date_created|date:"d.m.Y H:i" }}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:13px; font-weight:500;">{{ r.total_sum|floatformat:0 }}</div>
+                    {% if r.status == 'pending' %}<span class="badge badge-amber">Kutilmoqda</span>
+                    {% elif r.status == 'approved' %}<span class="badge badge-green">Tasdiqlangan</span>
+                    {% else %}<span class="badge badge-red">Rad etilgan</span>{% endif %}
+                </div>
+            </a>
+        {% empty %}
+            <div style="text-align:center; color:#aaa; padding:20px; font-size:13px;">So'rov yo'q</div>
+        {% endfor %}
+    </div>
+
+    <div style="font-size:13px; font-weight:500; margin-bottom:8px;">So'nggi nakladnoylar</div>
+    <div class="card" style="overflow:hidden;">
+        {% for order in recent_orders %}
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid #EBEBEB;">
+                <div>
+                    <div style="font-size:13px; font-weight:500;">{{ order.number }}</div>
+                    <div style="font-size:11px; color:#888;">{{ order.date_created|date:"d.m.Y" }}</div>
+                </div>
+                <div style="font-size:13px; font-weight:600;">{{ order.total_sum|floatformat:0 }}</div>
+            </div>
+        {% empty %}
+            <div style="text-align:center; color:#aaa; padding:20px; font-size:13px;">Nakladnoy yo'q</div>
+        {% endfor %}
+    </div>
+{% endblock %}

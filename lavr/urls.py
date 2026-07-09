@@ -20,9 +20,10 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
 
-    # ─── Asosiy app (apps.urls — sizning app nomingiz bo'yicha o'zgartiring) ───
-    path('', include('apps.urls')),
+    # ─── Asosiy app (admin.urls — sizning app nomingiz bo'yicha o'zgartiring) ───
+    path('', include('admin.urls')),
     path('agent/', include('agent.urls')),
+    path('client/', include('client.urls')),
 ]
 
 # ─── Media fayllarni development rejimida ko'rsatish ───

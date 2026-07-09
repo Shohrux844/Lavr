@@ -3,7 +3,7 @@ agent/urls.py
 
 DIQQAT: bu fayl ikkita guruh URL ni birlashtiradi:
   1. Admin uchun: agentlar boshqaruvi (/agents/...)
-     Ular asosiy apps/urls.py dagi URL'larni shu app'ga ko'chirildi.
+     Ular asosiy admin/urls.py dagi URL'larni shu app'ga ko'chirildi.
   2. Agent panel uchun: /agent/... prefix bilan project urls.py da include qilinadi.
 """
 from django.urls import path
@@ -29,8 +29,8 @@ urlpatterns = [
     path('panel/orders/<int:pk>/',   views.agent_order_detail,   name='agent_order_detail'),
     path('panel/products/',          views.agent_product_list,   name='agent_product_list'),
     path('panel/products/<int:pk>/', views.agent_product_detail, name='agent_product_detail'),
-    path('panel/clientes/',          views.agent_cliente_list,   name='agent_cliente_list'),
-    path('panel/clientes/create/',   views.agent_cliente_create, name='agent_cliente_create'),
+    path('panel/clients/',          views.agent_cliente_list,   name='agent_cliente_list'),
+    path('panel/clients/create/',   views.agent_cliente_create, name='agent_cliente_create'),
     path('panel/salary/',            views.agent_salary_list,    name='agent_salary_list'),
     path('panel/road/',              views.agent_road_tracking,  name='agent_road_tracking'),
     path('panel/ajax/nearby/',       views.agent_check_nearby,   name='agent_check_nearby'),

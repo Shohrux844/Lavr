@@ -7,14 +7,16 @@ from django.http import JsonResponse
 from datetime import date, timedelta
 import calendar
 
-from agent.models import AgentBalance
+from agent.models import AgentBalance, Agent
+from client.forms import ClienteForm
+from client.models import Cliente, OrderRequest
 from .models import (
-    Agent, Cliente, Product,
+    Product,
     Order, OrderItem, Payment, Salary,
     PointOfInterest, Visit,
 )
 from .forms import (
-    AgentForm, AgentBalanceForm, ClienteForm, ProductForm,
+    ProductForm,
     OrderForm, OrderUpdateForm, OrderItemFormSet, PaymentForm, SalaryForm,
     PointOfInterestForm, VisitForm,
 )
@@ -247,75 +249,6 @@ def dashboard(request):
 def models_low_threshold():
     """Yordamchi: stock_threshold uchun."""
     return 10
-
-
-# ════════════════════════════════════════════════
-# CLIENTE (Mijoz)
-# ════════════════════════════════════════════════
-
-@login_required
-def cliente_list(request):
-    q = request.GET.get('q', '')
-    clientes = Cliente.objects.filter(is_active=True).select_related('agent')
-    if q:
-        clientes = clientes.filter(
-            Q(first_name__icontains=q) |
-            Q(last_name__icontains=q) |
-            Q(firma_name__icontains=q) |
-            Q(alternative_name__icontains=q) |
-            Q(phone__icontains=q)
-        )
-    return render(request, 'clientes/list.html', {'clientes': clientes, 'q': q})
-
-
-@login_required
-def cliente_detail(request, pk):
-    cliente = get_object_or_404(Cliente, pk=pk)
-    orders = cliente.orders.all()[:20]
-    total_debt = (
-            cliente.orders.filter(status='debt')
-            .aggregate(s=Sum('total_sum'))['s'] or 0
-    )
-    context = {'cliente': cliente, 'orders': orders, 'total_debt': total_debt}
-    return render(request, 'clientes/detail.html', context)
-
-
-@login_required
-def cliente_create(request):
-    if request.method == 'POST':
-        form = ClienteForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Mijoz qo'shildi.")
-            return redirect('cliente_list')
-    else:
-        form = ClienteForm()
-    return render(request, 'clientes/form.html', {'form': form, 'title': "Yangi mijoz"})
-
-
-@login_required
-def cliente_update(request, pk):
-    cliente = get_object_or_404(Cliente, pk=pk)
-    if request.method == 'POST':
-        form = ClienteForm(request.POST, instance=cliente)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Mijoz yangilandi.")
-            return redirect('cliente_detail', pk=pk)
-    else:
-        form = ClienteForm(instance=cliente)
-    return render(request, 'clientes/form.html', {'form': form, 'title': "Mijozni tahrirlash"})
-
-
-@login_required
-def cliente_delete(request, pk):
-    cliente = get_object_or_404(Cliente, pk=pk)
-    if request.method == 'POST':
-        cliente.is_active = False
-        cliente.save()
-        messages.success(request, "Mijoz o'chirildi.")
-        return redirect('cliente_list')
-    return render(request, 'confirm_delete.html', {'object': cliente, 'type': 'Mijoz'})
 
 
 # ════════════════════════════════════════════════
@@ -893,3 +826,99 @@ def visit_create(request):
 def visit_list(request):
     visits = Visit.objects.select_related('agent', 'point', 'point__cliente').all()
     return render(request, 'points/visit_list.html', {'visits': visits})
+
+
+# ════════════════════════════════════════════════
+# BUYURTMA SO'ROVLARI (mijozdan kelgan)
+# ════════════════════════════════════════════════
+
+@login_required
+def order_request_list(request):
+    status_filter = request.GET.get('status', '')
+    requests_qs = OrderRequest.objects.select_related('cliente').prefetch_related('items__product')
+    if status_filter:
+        requests_qs = requests_qs.filter(status=status_filter)
+    pending_count = OrderRequest.objects.filter(status=OrderRequest.Status.PENDING).count()
+    return render(request, 'order_requests/list.html', {
+        'requests': requests_qs,
+        'status_filter': status_filter,
+        'pending_count': pending_count,
+        'status_choices': OrderRequest.Status.choices,
+    })
+
+
+@login_required
+def order_request_detail(request, pk):
+    req = get_object_or_404(
+        OrderRequest.objects.select_related('cliente').prefetch_related('items__product'),
+        pk=pk
+    )
+    return render(request, 'order_requests/detail.html', {'req': req})
+
+
+@login_required
+def order_request_approve(request, pk):
+    req = get_object_or_404(OrderRequest, pk=pk)
+    if request.method != 'POST':
+        return redirect('order_request_detail', pk=pk)
+
+    if req.status != OrderRequest.Status.PENDING:
+        messages.warning(request, "Bu so'rov allaqachon ko'rib chiqilgan.")
+        return redirect('order_request_detail', pk=pk)
+
+    items = list(req.items.select_related('product').all())
+    if not items:
+        messages.error(request, "So'rovda tovar yo'q.")
+        return redirect('order_request_detail', pk=pk)
+
+    for item in items:
+        if item.quantity > item.product.stock:
+            messages.error(
+                request,
+                f"Skladda faqat {item.product.stock} dona '{item.product.name}' bor "
+                f"(so'ralgan: {item.quantity})."
+            )
+            return redirect('order_request_detail', pk=pk)
+
+    agent = req.cliente.agent
+    if not agent:
+        messages.error(request, "Mijozga agent biriktirilmagan — avval mijoz profilida agent tanlang.")
+        return redirect('order_request_detail', pk=pk)
+
+    order = Order.objects.create(
+        cliente=req.cliente,
+        agent=agent,
+        payment_type=Order.PaymentType.DEBT,
+        note=req.note,
+    )
+    total = 0
+    for item in items:
+        OrderItem.objects.create(
+            order=order, product=item.product,
+            quantity=item.quantity, price=item.price,
+        )
+        total += item.subtotal
+        item.product.stock -= item.quantity
+        item.product.save()
+    order.total_sum = total
+    order.save()
+
+    req.status = OrderRequest.Status.APPROVED
+    req.order = order
+    req.date_reviewed = timezone.now()
+    req.save()
+
+    messages.success(request, f"So'rov tasdiqlandi — {order.number} nakladnoy yaratildi.")
+    return redirect('order_detail', pk=order.pk)
+
+
+@login_required
+def order_request_reject(request, pk):
+    req = get_object_or_404(OrderRequest, pk=pk)
+    if request.method == 'POST':
+        req.admin_note = request.POST.get('admin_note', '')
+        req.status = OrderRequest.Status.REJECTED
+        req.date_reviewed = timezone.now()
+        req.save()
+        messages.success(request, "So'rov rad etildi.")
+    return redirect('order_request_list')

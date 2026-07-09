@@ -1,6 +1,6 @@
 """
 Telegram xabarlarini yuborish uchun yordamchi modul.
-Bu faylni apps/telegram_bot.py sifatida saqlang.
+Bu faylni admin/telegram_bot.py sifatida saqlang.
 
 ISHLATISH UCHUN KERAK:
 1. Telegram'da @BotFather orqali bot yarating, BOT_TOKEN oling.

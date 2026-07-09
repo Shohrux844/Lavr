@@ -1,0 +1,115 @@
+{% extends "clients/base_client.html" %}
+{% block title %}Buyurtma berish{% endblock %}
+
+{% block content %}
+    <div style="font-size:15px; font-weight:600; margin-bottom:12px;">Yangi buyurtma</div>
+
+    {% if form.non_field_errors or formset.non_form_errors %}
+        <div class="alert alert-error">Formada xatolik bor, pastga qarang.</div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ formset.management_form }}
+        <div class="card" style="padding:16px; margin-bottom:12px;">
+            <div id="formset-container">
+                {% for f in formset %}
+                    <div class="formset-row"
+                         style="display:grid; grid-template-columns:2fr 1fr auto; gap:8px; align-items:flex-end; margin-bottom:8px;">
+                        <div>
+                            {% if forloop.first %}<label class="form-label">Tovar</label>{% endif %}
+                            <select name="{{ f.product.html_name }}" class="form-control product-select"
+                                    onchange="fetchPrice(this)">
+                                <option value="">— Tanlang —</option>
+                                {% for p in f.fields.product.queryset %}
+                                    <option value="{{ p.pk }}" data-price="{{ p.price }}"
+                                            {% if f.product.value|stringformat:"s" == p.pk|stringformat:"s" %}selected{% endif %}>
+                                        {{ p.name }} — {{ p.price|floatformat:0 }} so'm ({{ p.stock }} dona)
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <input type="hidden" name="{{ f.price.html_name }}" class="price-input"
+                                   value="{{ f.price.value|default:'' }}">
+                        </div>
+                        <div>
+                            {% if forloop.first %}<label class="form-label">Miqdor</label>{% endif %}
+                            <input type="number" name="{{ f.quantity.html_name }}" class="form-control"
+                                   value="{{ f.quantity.value|default:1 }}" min="1">
+                        </div>
+                        <div {% if forloop.first %}style="padding-top:22px;"{% endif %}>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)"><i
+                                    class="ti ti-trash"></i></button>
+                        </div>
+                        <div style="display:none;">{{ f.DELETE }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn" onclick="addRow()"><i class="ti ti-plus"></i> Tovar qo'shish</button>
+            <hr class="divider">
+            <div style="display:flex; justify-content:space-between; font-weight:600;">
+                <span>Jami:</span><span id="total-sum">0 so'm</span>
+            </div>
+        </div>
+
+        <div class="card" style="padding:16px; margin-bottom:12px;">
+            <label class="form-label">Izoh (ixtiyoriy)</label>
+            {{ form.note }}
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;">
+            <i class="ti ti-send"></i> So'rovni yuborish
+        </button>
+    </form>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        function fetchPrice(select) {
+            const opt = select.options[select.selectedIndex];
+            const row = select.closest('.formset-row');
+            const priceInput = row.querySelector('.price-input');
+            if (opt.dataset.price) priceInput.value = opt.dataset.price;
+            calcTotal();
+        }
+
+        function calcTotal() {
+            let total = 0;
+            document.querySelectorAll('.formset-row').forEach(row => {
+                const price = parseFloat(row.querySelector('.price-input')?.value) || 0;
+                const qty = parseFloat(row.querySelector('input[name$="-quantity"]')?.value) || 0;
+                total += price * qty;
+            });
+            document.getElementById('total-sum').textContent = Math.round(total).toLocaleString() + " so'm";
+        }
+
+        function removeRow(btn) {
+            const row = btn.closest('.formset-row');
+            const del = row.querySelector('input[type=checkbox]');
+            if (del) {
+                del.checked = true;
+                row.style.display = 'none';
+            } else {
+                row.remove();
+            }
+            calcTotal();
+        }
+
+        function addRow() {
+            const container = document.getElementById('formset-container');
+            const totalForms = document.querySelector('[name$=TOTAL_FORMS]');
+            const idx = parseInt(totalForms.value);
+            const firstRow = container.querySelector('.formset-row');
+            const newRow = firstRow.cloneNode(true);
+            newRow.querySelectorAll('input, select').forEach(el => {
+                if (el.name) el.name = el.name.replace(/-\d+-/, `-${idx}-`);
+                if (el.type === 'checkbox') el.checked = false; else el.value = '';
+            });
+            newRow.style.display = '';
+            container.appendChild(newRow);
+            totalForms.value = idx + 1;
+        }
+
+        document.addEventListener('input', calcTotal);
+        calcTotal();
+    </script>
+{% endblock %}

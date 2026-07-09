@@ -1,0 +1,42 @@
+{% extends "clients/base_client.html" %}
+{% block title %}To'lovlarim{% endblock %}
+
+{% block content %}
+    <div style="font-size:13px; font-weight:500; margin-bottom:8px;">To'lovlar tarixi</div>
+    <div class="card" style="overflow:hidden; margin-bottom:16px;">
+        {% for p in payments %}
+            <div style="padding:12px 14px; border-bottom:1px solid #EBEBEB;">
+                <div style="display:flex; justify-content:space-between;">
+                    <div>
+                        <div style="font-size:13px; font-weight:500;">{{ p.order.number }}</div>
+                        <div style="font-size:11px; color:#888;">{{ p.date_created|date:"d.m.Y H:i" }}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:600;">{{ p.amount|floatformat:0 }} so'm</div>
+                        {% if p.confirmed %}<span class="badge badge-green">Tasdiqlangan</span>
+                        {% else %}<span class="badge badge-amber">Kutilmoqda</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div style="text-align:center; color:#aaa; padding:24px; font-size:13px;">To'lov yo'q</div>
+        {% endfor %}
+    </div>
+
+    <div style="font-size:13px; font-weight:500; margin-bottom:8px;">Nakladnoylar (rasmlari bilan)</div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+        {% for order in orders %}
+            <div class="card" style="padding:14px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span style="font-weight:600;">{{ order.number }}</span>
+                    <span style="font-weight:600;">{{ order.total_sum|floatformat:0 }} so'm</span>
+                </div>
+                {% if order.nak_picture %}
+                    <img src="{{ order.nak_picture.url }}" style="width:100%; border-radius:8px; margin-top:6px;">
+                {% endif %}
+            </div>
+        {% empty %}
+            <div style="text-align:center; color:#aaa; padding:24px; font-size:13px;">Nakladnoy yo'q</div>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -1,4 +1,6 @@
 from django.urls import path
+
+from client.views import cliente_list, cliente_create, cliente_detail, cliente_update, cliente_delete
 from . import views
 from . import exports
 
@@ -8,13 +10,13 @@ urlpatterns = [
     path('', views.dashboard, name='dashboard'),
 
     # ─── Mijozlar ─────────────────────────────────────
-    path('clientes/', views.cliente_list, name='cliente_list'),
-    path('clientes/create/', views.cliente_create, name='cliente_create'),
-    path('clientes/<int:pk>/', views.cliente_detail, name='cliente_detail'),
-    path('clientes/<int:pk>/edit/', views.cliente_update, name='cliente_update'),
-    path('clientes/<int:pk>/delete/', views.cliente_delete, name='cliente_delete'),
-    path('clientes/export/excel/', exports.cliente_export_excel, name='cliente_export_excel'),
-    path('clientes/export/pdf/', exports.cliente_export_pdf, name='cliente_export_pdf'),
+    path('clients/', cliente_list, name='cliente_list'),
+    path('clients/create/', cliente_create, name='cliente_create'),
+    path('clients/<int:pk>/', cliente_detail, name='cliente_detail'),
+    path('clients/<int:pk>/edit/', cliente_update, name='cliente_update'),
+    path('clients/<int:pk>/delete/', cliente_delete, name='cliente_delete'),
+    path('clients/export/excel/', exports.cliente_export_excel, name='cliente_export_excel'),
+    path('clients/export/pdf/', exports.cliente_export_pdf, name='cliente_export_pdf'),
 
     # ─── Tovarlar (Sklad) ─────────────────────────────
     path('products/', views.product_list, name='product_list'),
@@ -33,6 +35,7 @@ urlpatterns = [
     path('orders/<int:pk>/delete/', views.order_delete, name='order_delete'),
     path('orders/export/excel/', exports.order_export_excel, name='order_export_excel'),
     path('orders/export/pdf/', exports.order_export_pdf, name='order_export_pdf'),
+
 
     # ─── To'lovlar (Perechesleniye) ───────────────────
     path('payments/', views.payment_list, name='payment_list'),
@@ -61,4 +64,11 @@ urlpatterns = [
     # ─── Tashriflar ────────────────────────────────────
     path('visits/', views.visit_list, name='visit_list'),
     path('visits/create/', views.visit_create, name='visit_create'),
+
+# ─── Buyurtma so'rovlari ───────────────────────────
+    path('order-requests/', views.order_request_list, name='order_request_list'),
+    path('order-requests/<int:pk>/', views.order_request_detail, name='order_request_detail'),
+    path('order-requests/<int:pk>/approve/', views.order_request_approve, name='order_request_approve'),
+    path('order-requests/<int:pk>/reject/', views.order_request_reject, name='order_request_reject'),
+
 ]

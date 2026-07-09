@@ -1,0 +1,44 @@
+{% extends "clients/base_client.html" %}
+{% block title %}So'rov #{{ req.pk }}{% endblock %}
+
+{% block content %}
+    <a href="{% url 'client_order_request_list' %}"
+       style="font-size:13px; color:#534AB7; text-decoration:none; display:inline-flex; gap:4px; margin-bottom:12px;">
+        <i class="ti ti-arrow-left"></i> So'rovlarim
+    </a>
+
+    <div class="card" style="padding:16px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:15px; font-weight:600;">So'rov #{{ req.pk }}</span>
+            {% if req.status == 'pending' %}<span class="badge badge-amber">Kutilmoqda</span>
+            {% elif req.status == 'approved' %}<span class="badge badge-green">Tasdiqlangan</span>
+            {% else %}<span class="badge badge-red">Rad etilgan</span>{% endif %}
+        </div>
+        <div style="font-size:12px; color:#888;">{{ req.date_created|date:"d.m.Y H:i" }}</div>
+        {% if req.note %}
+            <div style="font-size:12px; margin-top:8px; color:#555;">Izoh: {{ req.note }}</div>{% endif %}
+        {% if req.status == 'rejected' and req.admin_note %}
+            <div class="alert alert-error" style="margin-top:10px;">{{ req.admin_note }}</div>
+        {% endif %}
+        {% if req.order %}
+            <div style="margin-top:10px; font-size:12px; color:#3B6D11;">
+                <i class="ti ti-circle-check"></i> Nakladnoy: {{ req.order.number }}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card" style="overflow:hidden;">
+        {% for item in req.items.all %}
+            <div style="padding:10px 14px; border-bottom:1px solid #EBEBEB; display:flex; justify-content:space-between;">
+                <div>
+                    <div style="font-size:13px; font-weight:500;">{{ item.product.name }}</div>
+                    <div style="font-size:11px; color:#888;">{{ item.price|floatformat:0 }} × {{ item.quantity }}</div>
+                </div>
+                <div style="font-weight:600;">{{ item.subtotal|floatformat:0 }}</div>
+            </div>
+        {% endfor %}
+        <div style="padding:12px 14px; display:flex; justify-content:space-between; font-weight:700;">
+            <span>Jami:</span><span>{{ req.total_sum|floatformat:0 }} so'm</span>
+        </div>
+    </div>
+{% endblock %}

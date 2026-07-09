@@ -1,0 +1,26 @@
+{% extends "clients/base_client.html" %}
+{% block title %}So'rovlarim{% endblock %}
+
+{% block content %}
+    <div class="card" style="overflow:hidden;">
+        {% for r in requests %}
+            <a href="{% url 'client_order_request_detail' r.pk %}"
+               style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid #EBEBEB; text-decoration:none; color:inherit;">
+                <div>
+                    <div style="font-size:13px; font-weight:600;">So'rov #{{ r.pk }}</div>
+                    <div style="font-size:11px; color:#888;">{{ r.date_created|date:"d.m.Y H:i" }} · {{ r.items.count }}
+                        ta tovar
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:14px; font-weight:600;">{{ r.total_sum|floatformat:0 }}</div>
+                    {% if r.status == 'pending' %}<span class="badge badge-amber">Kutilmoqda</span>
+                    {% elif r.status == 'approved' %}<span class="badge badge-green">Tasdiqlangan</span>
+                    {% else %}<span class="badge badge-red">Rad etilgan</span>{% endif %}
+                </div>
+            </a>
+        {% empty %}
+            <div style="text-align:center; color:#aaa; padding:32px; font-size:13px;">Hali so'rov yo'q</div>
+        {% endfor %}
+    </div>
+{% endblock %}

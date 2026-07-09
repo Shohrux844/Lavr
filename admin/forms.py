@@ -2,8 +2,9 @@ from django import forms
 from django.forms import inlineformset_factory
 
 from agent.models import AgentBalance
+from client.models import Cliente
 from .models import (
-    Agent, Cliente, Product, Order, OrderItem, Payment, Salary,
+    Product, Order, OrderItem, Payment, Salary,
     PointOfInterest, Visit,
 )
 
@@ -11,55 +12,6 @@ ATTRS = {'class': 'form-control'}
 TEXTAREA = {'class': 'form-control', 'rows': 3}
 DATE = {'class': 'form-control', 'type': 'date'}
 FILE = {'class': 'form-control'}
-
-
-class AgentForm(forms.ModelForm):
-    class Meta:
-        model = Agent
-        fields = ['first_name', 'last_name', 'phone', 'address', 'commission_rate', 'balance_limit']
-        widgets = {f: forms.TextInput(attrs=ATTRS) for f in ['first_name', 'last_name', 'phone', 'address']}
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for name, field in self.fields.items():
-            if not field.widget.attrs.get('class'):
-                field.widget.attrs.update(ATTRS)
-
-
-class AgentBalanceForm(forms.ModelForm):
-    class Meta:
-        model = AgentBalance
-        fields = ['agent', 'date', 'given_amount', 'returned_amount', 'note']
-        widgets = {
-            'date': forms.DateInput(attrs={**ATTRS, 'type': 'date'}),
-            'note': forms.Textarea(attrs=TEXTAREA),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for f in self.fields.values():
-            if not f.widget.attrs.get('class'):
-                f.widget.attrs.update(ATTRS)
-
-
-class ClienteForm(forms.ModelForm):
-    class Meta:
-        model = Cliente
-        fields = ['first_name', 'last_name', 'firma_name', 'alternative_name', 'phone', 'address', 'agent']
-        labels = {
-            'first_name': 'Ism',
-            'last_name': 'Familiya',
-            'firma_name': 'Firma nomi',
-            'alternative_name': 'Alternativ nom',
-            'phone': 'Telefon',
-            'address': 'Manzil',
-            'agent': 'Agent',
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for f in self.fields.values():
-            f.widget.attrs.update(ATTRS)
 
 
 class ProductForm(forms.ModelForm):

@@ -18,8 +18,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'apps',
-    'agent'
+    'admin',
+    'agent',
+    'client'
 ]
 
 MIDDLEWARE = [
@@ -33,7 +34,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "lavr.urls"
-AUTH_USER_MODEL = "apps.User"
+AUTH_USER_MODEL = "admin.User"
 
 TEMPLATES = [
     {
@@ -99,7 +100,7 @@ MESSAGE_TAGS = {messages.ERROR: 'error'}
 # qidiradi, agar siz boshqacha belgilamagan bo'lsangiz.
 
 LOGIN_URL = 'login'  # urls.py dagi name='login' bilan moslashadi
-# LOGIN_REDIRECT_URL = 'dashboard'  # kirgandan keyin qayerga yo'naltirilsin
+LOGIN_REDIRECT_URL = 'dashboard'  # kirgandan keyin qayerga yo'naltirilsin
 LOGOUT_REDIRECT_URL = 'login'  # chiqgandan keyin qayerga yo'naltirilsin
 
 

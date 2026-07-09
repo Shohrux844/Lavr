@@ -1,6 +1,6 @@
 """
 Excel va PDF eksport funksiyalari.
-Bu faylni apps/exports.py sifatida saqlang.
+Bu faylni admin/exports.py sifatida saqlang.
 """
 import io
 from datetime import date
@@ -19,7 +19,8 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
-from .models import Order, Product, Cliente, Payment
+from client.models import Cliente
+from .models import Order, Product, Payment
 
 # ════════════════════════════════════════════════════════════
 # UMUMIY YORDAMCHI FUNKSIYALAR

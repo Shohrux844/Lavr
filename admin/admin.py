@@ -1,8 +1,7 @@
 from django.contrib import admin
 
-from agent.models import AgentBalance
 from .models import (
-    User, Agent, Cliente, Product,
+    User, Product,
     Order, OrderItem, Payment, Salary,
     PointOfInterest, Visit,
 )
@@ -16,13 +15,6 @@ class UserAdmin(admin.ModelAdmin):
         "last_name",
         "email",
     )
-
-
-@admin.register(Cliente)
-class ClienteAdmin(admin.ModelAdmin):
-    list_display = ['first_name', 'last_name', 'firma_name', 'alternative_name', 'phone', 'agent', 'is_active']
-    search_fields = ['first_name', 'last_name', 'firma_name', 'alternative_name', 'phone']
-    list_filter = ['is_active', 'agent']
 
 
 @admin.register(Product)

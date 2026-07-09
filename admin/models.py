@@ -16,9 +16,6 @@ from django.db.models import (
     BooleanField,
     TextChoices,
 )
-from django.utils import timezone
-
-from agent.models import Agent
 
 
 # ──────────────────────────────────────────────
@@ -26,28 +23,6 @@ from agent.models import Agent
 # ──────────────────────────────────────────────
 class User(AbstractUser):
     pass
-
-
-# ──────────────────────────────────────────────
-# 4. Mijoz (Cliente)
-# ──────────────────────────────────────────────
-class Cliente(Model):
-    first_name = CharField(max_length=120)
-    last_name = CharField(max_length=120)
-    firma_name = CharField(max_length=120, blank=True)
-    alternative_name = CharField(max_length=120, blank=True)
-    phone = CharField(max_length=20, blank=True)
-    address = CharField(max_length=255, blank=True)
-    agent = ForeignKey(Agent, on_delete=SET_NULL, null=True, related_name='clientes')
-    is_active = BooleanField(default=True)
-    date_created = DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.firma_name or f"{self.first_name} {self.last_name}"
-
-    class Meta:
-        verbose_name = "Mijoz"
-        verbose_name_plural = "Mijozlar"
 
 
 # ──────────────────────────────────────────────
@@ -100,8 +75,8 @@ class Order(Model):
 
     # Nakladnoy raqami (NK-1041 formatida)
     number = CharField(max_length=20, unique=True, blank=True)
-    cliente = ForeignKey(Cliente, on_delete=CASCADE, related_name='orders')
-    agent = ForeignKey(Agent, on_delete=CASCADE, related_name='orders')
+    cliente = ForeignKey("client.Cliente", on_delete=CASCADE, related_name='orders')
+    agent = ForeignKey("agent.Agent", on_delete=CASCADE, related_name='orders')
     status = CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     payment_type = CharField(
         max_length=20, choices=PaymentType.choices, default=PaymentType.CASH
@@ -134,8 +109,8 @@ class Order(Model):
 # 7. Nakladnoy satrlari (OrderItem)
 # ──────────────────────────────────────────────
 class OrderItem(Model):
-    order = ForeignKey(Order, on_delete=CASCADE, related_name='items')
-    product = ForeignKey(Product, on_delete=CASCADE, related_name='order_items')
+    order = ForeignKey("admin.Order", on_delete=CASCADE, related_name='items')
+    product = ForeignKey("admin.Product", on_delete=CASCADE, related_name='order_items')
     quantity = PositiveIntegerField(default=1)
     price = IntegerField(help_text="Sotish paytidagi narx (o'zgarmasligi uchun saqlanadi)")
 
@@ -159,7 +134,7 @@ class Payment(Model):
         CASH = 'cash', "Naqd"
         BANK = 'bank', "Bank o'tkazmasi"
 
-    order = ForeignKey(Order, on_delete=CASCADE, related_name='payments')
+    order = ForeignKey("admin.Order", on_delete=CASCADE, related_name='payments')
     amount = IntegerField()
     method = CharField(max_length=20, choices=Method.choices, default=Method.CASH)
     screenshot = ImageField(
@@ -187,7 +162,7 @@ class Salary(Model):
         CALCULATED = 'calculated', "Hisoblandi"
         PAID = 'paid', "To'landi"
 
-    agent = ForeignKey(Agent, on_delete=CASCADE, related_name='salaries')
+    agent = ForeignKey("agent.Agent", on_delete=CASCADE, related_name='salaries')
     month = DateField(help_text="Oy boshi sanasi, masalan: 2026-06-01")
     total_sales = IntegerField(default=0, help_text="O'sha oyda jami sotilgan summa")
     commission_rate = DecimalField(max_digits=5, decimal_places=2)
@@ -237,7 +212,7 @@ class PointOfInterest(Model):
     # Shartnoma holati — bog'langan Cliente orqali aniqlanadi.
     # Agar cliente bo'lmasa — bu joy hali shartnomasiz (yangi).
     cliente = ForeignKey(
-        'Cliente', on_delete=SET_NULL, null=True, blank=True,
+        'client.Cliente', on_delete=SET_NULL, null=True, blank=True,
         related_name='points_of_interest',
         help_text="Agar shartnoma qilingan bo'lsa, mos mijoz yozuvi"
     )
@@ -266,8 +241,8 @@ class Visit(Model):
     Agent biror nuqtaga (AZS/do'kon) tashrif qilganda yaratiladigan yozuv.
     Telegramga xabar yuborish shu yozuv asosida ishlaydi.
     """
-    agent = ForeignKey(Agent, on_delete=CASCADE, related_name='visits')
-    point = ForeignKey(PointOfInterest, on_delete=CASCADE, related_name='visits')
+    agent = ForeignKey("agent.Agent", on_delete=CASCADE, related_name='visits')
+    point = ForeignKey("admin.PointOfInterest", on_delete=CASCADE, related_name='visits')
     latitude = FloatField(null=True, blank=True, help_text="Agent tashrif paytidagi GPS")
     longitude = FloatField(null=True, blank=True)
     note = TextField(blank=True)

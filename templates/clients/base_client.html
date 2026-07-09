@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{% block title %}Agent{% endblock %} — SavdoTizim</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F5F5F7;
+            color: #1a1a1a;
+        }
+
+        .topbar {
+            background: #fff;
+            border-bottom: 1px solid #EBEBEB;
+            padding: 0 16px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+        }
+
+        .topbar-brand {
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .topbar-brand span {
+            color: #534AB7;
+        }
+
+        .topbar-user {
+            font-size: 12px;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border-top: 1px solid #EBEBEB;
+            display: flex;
+            z-index: 30;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 4px 10px;
+            font-size: 10px;
+            color: #888;
+            text-decoration: none;
+            gap: 3px;
+            transition: color .12s;
+        }
+
+        .nav-item i {
+            font-size: 20px;
+        }
+
+        .nav-item.active {
+            color: #534AB7;
+        }
+
+        .nav-item.active i {
+            color: #534AB7;
+        }
+
+        .main {
+            padding: 16px;
+            padding-bottom: 72px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #EBEBEB;
+            border-radius: 12px;
+        }
+
+        .stat-card {
+            background: #F5F5F7;
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 3px;
+        }
+
+        .stat-val {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 11px;
+            padding: 2px 9px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .badge-green {
+            background: #EAF3DE;
+            color: #3B6D11;
+        }
+
+        .badge-red {
+            background: #FCEBEB;
+            color: #A32D2D;
+        }
+
+        .badge-amber {
+            background: #FAEEDA;
+            color: #854F0B;
+        }
+
+        .badge-blue {
+            background: #E6F1FB;
+            color: #185FA5;
+        }
+
+        .badge-purple {
+            background: #EEEDFE;
+            color: #534AB7;
+        }
+
+        .badge-gray {
+            background: #F1EFE8;
+            color: #5F5E5A;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            font-size: 13px;
+            border-radius: 8px;
+            border: 1px solid #DDDDE3;
+            background: #fff;
+            cursor: pointer;
+            color: #333;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: #534AB7;
+            color: #fff;
+            border-color: #534AB7;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 9px 12px;
+            font-size: 13.5px;
+            border: 1px solid #DDDDE3;
+            border-radius: 8px;
+            background: #fff;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: #534AB7;
+            box-shadow: 0 0 0 3px #EEEDFE;
+        }
+
+        .form-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-error {
+            font-size: 11.5px;
+            color: #A32D2D;
+            margin-top: 3px;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid #EBEBEB;
+            margin: 12px 0;
+        }
+
+        .table-base {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .table-base th {
+            text-align: left;
+            padding: 10px 12px;
+            color: #888;
+            font-weight: 500;
+            border-bottom: 1px solid #EBEBEB;
+        }
+
+        .table-base td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #EBEBEB;
+            vertical-align: middle;
+        }
+
+        .table-base tr:last-child td {
+            border-bottom: none;
+        }
+
+        .alert {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .alert-success {
+            background: #EAF3DE;
+            color: #3B6D11;
+            border: 1px solid #C0DD97;
+        }
+
+        .alert-error {
+            background: #FCEBEB;
+            color: #A32D2D;
+            border: 1px solid #F7C1C1;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<header class="topbar">
+    <div class="topbar-brand">
+        <span>●</span> SavdoTizim
+    </div>
+    <div class="topbar-user">
+        {% if request.user.is_authenticated %}
+            {{ request.user.agent_profile }}
+        {% endif %}
+        <a href="{% url 'logout' %}" style="color:#A32D2D; text-decoration:none; font-size:12px;">
+            <i class="ti ti-logout" style="font-size:16px;"></i>
+        </a>
+    </div>
+</header>
+
+{% if messages %}
+    <div style="padding: 8px 16px 0;">
+        {% for msg in messages %}
+            <div class="alert alert-{{ msg.tags }}">
+                <i class="ti ti-{% if msg.tags == 'success' %}circle-check{% else %}alert-triangle{% endif %}"
+                   style="font-size:15px;flex-shrink:0;"></i>
+                {{ msg }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<main class="main">
+    {% block content %}{% endblock %}
+</main>
+
+<nav class="bottom-nav">
+    <a href="{% url 'client_dashboard' %}"
+       class="nav-item {% if request.resolver_match.url_name == 'client_dashboard' %}active{% endif %}">
+        <i class="ti ti-layout-dashboard"></i>Bosh
+    </a>
+    <a href="{% url 'client_product_list' %}"
+       class="nav-item {% if request.resolver_match.url_name == 'client_product_list' %}active{% endif %}">
+        <i class="ti ti-package"></i>Tovarlar
+    </a>
+    <a href="{% url 'client_order_request_create' %}"
+       class="nav-item {% if request.resolver_match.url_name == 'client_order_request_create' %}active{% endif %}">
+        <i class="ti ti-shopping-cart-plus"></i>Buyurtma
+    </a>
+    <a href="{% url 'client_order_request_list' %}"
+       class="nav-item {% if 'order_request' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="ti ti-list-details"></i>So'rovlarim
+    </a>
+    <a href="{% url 'client_payment_list' %}"
+       class="nav-item {% if request.resolver_match.url_name == 'client_payment_list' %}active{% endif %}">
+        <i class="ti ti-credit-card"></i>To'lovlar
+    </a>
+</nav>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>
