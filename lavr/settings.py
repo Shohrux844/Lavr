@@ -1,15 +1,15 @@
 import os
 from pathlib import Path
+from decouple import config, Csv
 
 from django.contrib import messages
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-#nbo&g5h6(nxz*r+07%-2l33=a^rlrnjhydt#n#birz=_!)3fz"
-
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
+# ─── Maxfiy sozlamalar — endi .env fayldan o'qiladi ───────────
+SECRET_KEY = config('SECRET_KEY')
+DEBUG = config('DEBUG', default=False, cast=bool)
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=Csv())
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -39,8 +39,7 @@ AUTH_USER_MODEL = "apps.User"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / 'templates']
-        ,
+        "DIRS": [BASE_DIR / 'templates'],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -62,49 +61,27 @@ DATABASES = {
 }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "UTC"
-
 USE_I18N = True
-
 USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "static"
-# STATICFILES_DIRS = [BASE_DIR / 'static']  # agar static papka bo'lsa
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-MESSAGE_TAGS = {messages.ERROR: 'error'}
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'login'
 
-
-# ─── 2. AUTH — login/logout yo'naltirish ──────────────────────
-# Aynan shu narsa yo'qligi sababli /accounts/login/?next=/ ga
-# tushib, 404 chiqargan edi. Django default holatda shu manzilni
-# qidiradi, agar siz boshqacha belgilamagan bo'lsangiz.
-
-LOGIN_URL = 'login'  # urls.py dagi name='login' bilan moslashadi
-LOGIN_REDIRECT_URL = 'dashboard'  # kirgandan keyin qayerga yo'naltirilsin
-LOGOUT_REDIRECT_URL = 'login'  # chiqgandan keyin qayerga yo'naltirilsin
-
-
-# ─── 5. MESSAGES — Bootstrap/Tailwind class nomlariga moslash ──
 from django.contrib.messages import constants as messages_constants
 MESSAGE_TAGS = {
     messages_constants.DEBUG: 'info',
@@ -114,10 +91,15 @@ MESSAGE_TAGS = {
     messages_constants.ERROR: 'error',
 }
 
-# TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
-# TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
+# ─── Telegram — endi .env fayldan o'qiladi ─────────────────────
+TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
+TELEGRAM_CHAT_ID = config('TELEGRAM_CHAT_ID', default='')
 
-# Development uchun vaqtincha to'g'ridan-to'g'ri yozish mumkin (ishonchli
-# bo'lmagan joyda saqlamang, productionga chiqishdan oldin o'chiring):
-TELEGRAM_BOT_TOKEN = '8656172686:AAHCC8alm0pX8u9h8JiUDx7tPPP6yueZe7A'
-TELEGRAM_CHAT_ID = '6196411524'
+# ─── Production uchun qo'shimcha xavfsizlik (DEBUG=False bo'lganda ishlaydi) ───
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'

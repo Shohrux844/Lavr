@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from django.http import JsonResponse
@@ -20,7 +20,17 @@ from .forms import (
     OrderForm, OrderUpdateForm, OrderItemFormSet, PaymentForm, SalaryForm,
     PointOfInterestForm, VisitForm,
 )
+from .decorators import admin_required
 from . import telegram_bot
+
+
+class StockError(Exception):
+    """
+    Sklad yetarli emasligi haqida xato — transaction.atomic() blok ichida
+    ko'tarilganda, blokdagi BARCHA o'zgarishlarni (order, itemlar, boshqa
+    tovarlarning stock kamayishi) avtomatik bekor qiladi (rollback).
+    """
+    pass
 
 
 # ════════════════════════════════════════════════
@@ -28,19 +38,11 @@ from . import telegram_bot
 # ════════════════════════════════════════════════
 
 def _resolve_period(request, prefix=''):
-    """
-    Tezkor tugma (today/week/month/year) yoki qo'lda sana oralig'idan
-    boshlanish/tugash sanalarini hisoblab beradi.
-
-    prefix — bir nechta davr (masalan solishtirish uchun 2 ta) bo'lganda
-    GET parametr nomlarini ajratish uchun, masalan 'cmp1_', 'cmp2_'.
-    """
     today = date.today()
     period = request.GET.get(f'{prefix}period', 'month')
     date_from_raw = request.GET.get(f'{prefix}date_from', '')
     date_to_raw = request.GET.get(f'{prefix}date_to', '')
 
-    # Qo'lda sana kiritilgan bo'lsa, u ustun turadi
     if date_from_raw and date_to_raw:
         return date_from_raw, date_to_raw, 'custom'
 
@@ -52,16 +54,12 @@ def _resolve_period(request, prefix=''):
     elif period == 'year':
         start = today.replace(month=1, day=1)
         return start.isoformat(), today.isoformat(), 'year'
-    else:  # month — default
+    else:
         start = today.replace(day=1)
         return start.isoformat(), today.isoformat(), 'month'
 
 
 def _period_stats(date_from, date_to, firma=''):
-    """
-    Berilgan sana oralig'i (va ixtiyoriy firma) uchun umumiy statistika:
-    umumiy savdo, yig'ilgan pul, qolgan qarz.
-    """
     orders = Order.objects.filter(
         date_created__date__gte=date_from,
         date_created__date__lte=date_to,
@@ -91,7 +89,6 @@ def _period_stats(date_from, date_to, firma=''):
 
 
 def _agent_stats(date_from, date_to, firma=''):
-    """Har bir agent uchun: savdo summasi va komissiya summasi (tanlangan davrda)."""
     agents = Agent.objects.filter(is_active=True)
     result = []
     for agent in agents:
@@ -111,13 +108,11 @@ def _agent_stats(date_from, date_to, firma=''):
             'commission_rate': agent.commission_rate,
             'commission': commission,
         })
-    # Eng ko'p sotgan agent yuqorida
     result.sort(key=lambda r: r['sales'], reverse=True)
     return result
 
 
 def _cliente_stats(date_from, date_to, firma='', limit=8):
-    """Har bir mijoz uchun: to'lagan pul va qolgan qarz (tanlangan davrda)."""
     clientes = Cliente.objects.filter(is_active=True)
     if firma:
         clientes = clientes.filter(firma_name=firma)
@@ -145,13 +140,11 @@ def _cliente_stats(date_from, date_to, firma='', limit=8):
             'total_paid': total_paid,
             'debt': debt,
         })
-    # Eng katta qarzi bor mijozlar yuqorida
     result.sort(key=lambda r: r['debt'], reverse=True)
     return result[:limit]
 
 
 def _percent_change(old, new):
-    """Eski va yangi qiymat orasidagi foiz o'zgarish. Eski 0 bo'lsa None qaytaradi."""
     if old == 0:
         return None
     return round(((new - old) / old) * 100, 1)
@@ -161,11 +154,10 @@ def _percent_change(old, new):
 # DASHBOARD
 # ════════════════════════════════════════════════
 
-@login_required
+@admin_required
 def dashboard(request):
     today = date.today()
 
-    # ─── 0. Firma filtri (ixtiyoriy) ───
     firma = request.GET.get('firma', '')
     firma_list = (
         Cliente.objects.filter(is_active=True)
@@ -175,13 +167,11 @@ def dashboard(request):
         .order_by('firma_name')
     )
 
-    # ─── 1. Joriy davr (tezkor tugma yoki qo'lda sana) ───
     date_from, date_to, period = _resolve_period(request)
     period_stats = _period_stats(date_from, date_to, firma)
     agent_stats = _agent_stats(date_from, date_to, firma)
     cliente_stats = _cliente_stats(date_from, date_to, firma)
 
-    # ─── 2. Solishtirish bloki (ixtiyoriy, ikki davr) ───
     comparison = None
     cmp1_from = request.GET.get('cmp1_date_from', '')
     cmp1_to = request.GET.get('cmp1_date_to', '')
@@ -200,7 +190,6 @@ def dashboard(request):
             'orders_change': _percent_change(stats1['orders_count'], stats2['orders_count']),
         }
 
-    # ─── 3. Eski statistikalar (bugungi kun uchun, o'zgarmagan) ───
     today_orders = Order.objects.filter(date_created__date=today)
     total_income_today = (
             Payment.objects.filter(date_created__date=today, confirmed=True)
@@ -226,7 +215,6 @@ def dashboard(request):
         'agent_balances': agent_balances,
         'today': today,
 
-        # Davr filtri va statistika
         'period': period,
         'date_from': date_from,
         'date_to': date_to,
@@ -236,7 +224,6 @@ def dashboard(request):
         'firma': firma,
         'firma_list': firma_list,
 
-        # Solishtirish
         'comparison': comparison,
         'cmp1_from': cmp1_from,
         'cmp1_to': cmp1_to,
@@ -247,7 +234,6 @@ def dashboard(request):
 
 
 def models_low_threshold():
-    """Yordamchi: stock_threshold uchun."""
     return 10
 
 
@@ -255,7 +241,7 @@ def models_low_threshold():
 # PRODUCT (Tovar / Sklad)
 # ════════════════════════════════════════════════
 
-@login_required
+@admin_required
 def product_list(request):
     status_filter = request.GET.get('status', '')
     q = request.GET.get('q', '')
@@ -274,7 +260,7 @@ def product_list(request):
     return render(request, 'products/list.html', context)
 
 
-@login_required
+@admin_required
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
     recent_items = product.order_items.select_related('order__cliente')[:10]
@@ -284,7 +270,7 @@ def product_detail(request, pk):
     })
 
 
-@login_required
+@admin_required
 def product_create(request):
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
@@ -297,7 +283,7 @@ def product_create(request):
     return render(request, 'products/form.html', {'form': form, 'title': "Yangi tovar"})
 
 
-@login_required
+@admin_required
 def product_update(request, pk):
     product = get_object_or_404(Product, pk=pk)
     if request.method == 'POST':
@@ -311,7 +297,7 @@ def product_update(request, pk):
     return render(request, 'products/form.html', {'form': form, 'title': "Tovarni tahrirlash"})
 
 
-@login_required
+@admin_required
 def product_delete(request, pk):
     product = get_object_or_404(Product, pk=pk)
     if request.method == 'POST':
@@ -326,7 +312,7 @@ def product_delete(request, pk):
 # ORDER (Nakladnoy)
 # ════════════════════════════════════════════════
 
-@login_required
+@admin_required
 def order_list(request):
     status_filter = request.GET.get('status', '')
     q = request.GET.get('q', '')
@@ -360,7 +346,7 @@ def order_list(request):
     return render(request, 'orders/list.html', context)
 
 
-@login_required
+@admin_required
 def order_detail(request, pk):
     order = get_object_or_404(
         Order.objects.select_related('cliente', 'agent').prefetch_related('items__product'),
@@ -379,14 +365,12 @@ def order_detail(request, pk):
     return render(request, 'orders/detail.html', context)
 
 
-@login_required
+@admin_required
 def order_create(request):
     if request.method == 'POST':
         form = OrderForm(request.POST, request.FILES)
         formset = OrderItemFormSet(request.POST, prefix='items')
         if form.is_valid() and formset.is_valid():
-            # Bo'sh (DELETE=True belgilangan) qatorlarni chiqarib,
-            # haqiqiy tovar qatorlari borligini tekshirish
             real_items = [
                 f for f in formset
                 if not f.cleaned_data.get('DELETE') and f.cleaned_data.get('product')
@@ -395,36 +379,46 @@ def order_create(request):
             if not real_items:
                 messages.error(request, "Kamida bitta tovar qo'shishingiz kerak.")
             else:
-                # Skladda yetarli miqdor borligini oldindan tekshirish
-                stock_error = False
-                for item_form in real_items:
-                    product = item_form.cleaned_data.get('product')
-                    quantity = item_form.cleaned_data.get('quantity')
-                    if product and quantity and quantity > product.stock:
-                        item_form.add_error(
-                            'quantity',
-                            f"Skladda faqat {product.stock} dona '{product.name}' bor."
-                        )
-                        stock_error = True
+                order = None
+                try:
+                    with transaction.atomic():
+                        order = form.save()
+                        total = 0
+                        for item_form in real_items:
+                            product = item_form.cleaned_data.get('product')
+                            quantity = item_form.cleaned_data.get('quantity')
 
-                if not stock_error:
-                    order = form.save()
-                    total = 0
-                    for item_form in real_items:
-                        item = item_form.save(commit=False)
-                        item.order = order
-                        item.save()
-                        total += item.subtotal
-                        # Skladdan ayirish
-                        item.product.stock -= item.quantity
-                        item.product.save()
-                    # Jami summani hisoblash
-                    order.total_sum = total
-                    order.save()
+                            # ─── Qatorni QULFLAYMIZ (select_for_update) ───
+                            # Shu tovar ustida boshqa parallel so'rov ham
+                            # ishlayotgan bo'lsa, u shu yerda navbatga turadi
+                            # va faqat biz tranzaksiyani tugatgandan keyin
+                            # eng SO'NGGI (yangilangan) stock qiymatini o'qiydi.
+                            locked_product = Product.objects.select_for_update().get(pk=product.pk)
+
+                            if quantity > locked_product.stock:
+                                raise StockError(
+                                    f"Skladda faqat {locked_product.stock} dona "
+                                    f"'{locked_product.name}' bor (so'ralgan: {quantity})."
+                                )
+
+                            item = item_form.save(commit=False)
+                            item.order = order
+                            item.save()
+                            total += item.subtotal
+
+                            locked_product.stock -= quantity
+                            locked_product.save()
+
+                        order.total_sum = total
+                        order.save()
+                except StockError as e:
+                    # Butun tranzaksiya (order + itemlar + stock o'zgarishlari)
+                    # avtomatik bekor qilindi — hech qanday yarim-chala yozuv qolmaydi.
+                    messages.error(request, str(e))
+                else:
                     messages.success(request, f"{order.number} nakladnoy yaratildi.")
                     return redirect('order_detail', pk=order.pk)
         else:
-            # Aniq qaysi maydonda xato borligini ko'rsatish
             error_parts = []
             if form.errors:
                 for field, errs in form.errors.items():
@@ -452,7 +446,7 @@ def order_create(request):
     })
 
 
-@login_required
+@admin_required
 def order_update(request, pk):
     order = get_object_or_404(Order, pk=pk)
     if request.method == 'POST':
@@ -466,7 +460,7 @@ def order_update(request, pk):
     return render(request, 'orders/update_form.html', {'form': form, 'order': order})
 
 
-@login_required
+@admin_required
 def order_delete(request, pk):
     order = get_object_or_404(Order, pk=pk)
     if request.method == 'POST':
@@ -480,7 +474,7 @@ def order_delete(request, pk):
 # PAYMENT (To'lov / Perechesleniye)
 # ════════════════════════════════════════════════
 
-@login_required
+@admin_required
 def payment_list(request):
     method_filter = request.GET.get('method', '')
     confirmed_filter = request.GET.get('confirmed', '')
@@ -526,7 +520,7 @@ def payment_list(request):
     return render(request, 'payments/list.html', context)
 
 
-@login_required
+@admin_required
 def payment_create(request, order_pk):
     order = get_object_or_404(Order, pk=order_pk)
     if request.method == 'POST':
@@ -535,11 +529,9 @@ def payment_create(request, order_pk):
             payment = form.save(commit=False)
             payment.order = order
             payment.save()
-            # Agar naqd bo'lsa, avtomatik tasdiqlash
             if payment.method == 'cash':
                 payment.confirmed = True
                 payment.save()
-            # Order statusini yangilash
             _update_order_status(order)
             messages.success(request, "To'lov kiritildi.")
             return redirect('order_detail', pk=order_pk)
@@ -552,9 +544,8 @@ def payment_create(request, order_pk):
     })
 
 
-@login_required
+@admin_required
 def payment_confirm(request, pk):
-    """Bank to'lovini tasdiqlash."""
     payment = get_object_or_404(Payment, pk=pk)
     if request.method == 'POST':
         payment.confirmed = True
@@ -565,7 +556,6 @@ def payment_confirm(request, pk):
 
 
 def _update_order_status(order):
-    """To'lovlar asosida order statusini avtomatik yangilash."""
     total_paid = (
             order.payments.filter(confirmed=True)
             .aggregate(s=Sum('amount'))['s'] or 0
@@ -581,7 +571,7 @@ def _update_order_status(order):
 # SALARY (Maosh)
 # ════════════════════════════════════════════════
 
-@login_required
+@admin_required
 def salary_list(request):
     month_filter = request.GET.get('month', '')
     salaries = Salary.objects.select_related('agent').all()
@@ -593,12 +583,8 @@ def salary_list(request):
     })
 
 
-@login_required
+@admin_required
 def salary_calculate(request):
-    """
-    Joriy oy uchun barcha agentlarning maoshini avtomatik hisoblash.
-    POST so'rov bilan ishlaydi.
-    """
     if request.method == 'POST':
         today = date.today()
         month_start = today.replace(day=1)
@@ -606,7 +592,6 @@ def salary_calculate(request):
         created_count = 0
 
         for agent in agents:
-            # O'sha oy sotuvi
             total_sales = (
                     Order.objects.filter(
                         agent=agent,
@@ -626,7 +611,7 @@ def salary_calculate(request):
             )
             salary.total_sales = total_sales
             salary.commission_rate = agent.commission_rate
-            salary.calculate()  # commission_amount va total_salary ni hisoblaydi
+            salary.calculate()
             if created:
                 created_count += 1
 
@@ -639,13 +624,13 @@ def salary_calculate(request):
     return render(request, 'salaries/calculate_confirm.html')
 
 
-@login_required
+@admin_required
 def salary_detail(request, pk):
     salary = get_object_or_404(Salary.objects.select_related('agent'), pk=pk)
     return render(request, 'salaries/detail.html', {'salary': salary})
 
 
-@login_required
+@admin_required
 def salary_update(request, pk):
     salary = get_object_or_404(Salary, pk=pk)
     if request.method == 'POST':
@@ -660,7 +645,7 @@ def salary_update(request, pk):
     return render(request, 'salaries/form.html', {'form': form, 'salary': salary})
 
 
-@login_required
+@admin_required
 def salary_mark_paid(request, pk):
     salary = get_object_or_404(Salary, pk=pk)
     if request.method == 'POST':
@@ -675,12 +660,8 @@ def salary_mark_paid(request, pk):
 # AJAX — product narxini olish (order form uchun)
 # ════════════════════════════════════════════════
 
-@login_required
+@admin_required
 def get_product_price(request):
-    """
-    AJAX: ?product_id=5 → {"price": 48000, "stock": 23}
-    Nakladnoy formida tovar tanlanganda narxni avtomatik to'ldirish uchun.
-    """
     product_id = request.GET.get('product_id')
     if not product_id:
         return JsonResponse({'error': 'product_id kerak'}, status=400)
@@ -695,12 +676,8 @@ def get_product_price(request):
 # NUQTALAR (AZS / Avto-do'kon) — xarita
 # ════════════════════════════════════════════════
 
-@login_required
+@admin_required
 def point_map(request):
-    """
-    Xarita sahifasi: barcha AZS/do'konlarni ko'rsatadi.
-    Shartnomasi bor (yashil) / yo'q (qizil) rang bilan ajraladi.
-    """
     points = PointOfInterest.objects.filter(is_active=True).select_related('cliente')
     points_data = []
     for p in points:
@@ -732,13 +709,13 @@ def point_map(request):
     })
 
 
-@login_required
+@admin_required
 def point_list(request):
     points = PointOfInterest.objects.filter(is_active=True).select_related('cliente')
     return render(request, 'points/list.html', {'points': points})
 
 
-@login_required
+@admin_required
 def point_create(request):
     if request.method == 'POST':
         form = PointOfInterestForm(request.POST)
@@ -751,7 +728,7 @@ def point_create(request):
     return render(request, 'points/form.html', {'form': form, 'title': "Yangi nuqta (AZS/Do'kon)"})
 
 
-@login_required
+@admin_required
 def point_update(request, pk):
     point = get_object_or_404(PointOfInterest, pk=pk)
     if request.method == 'POST':
@@ -765,7 +742,7 @@ def point_update(request, pk):
     return render(request, 'points/form.html', {'form': form, 'title': "Nuqtani tahrirlash"})
 
 
-@login_required
+@admin_required
 def point_delete(request, pk):
     point = get_object_or_404(PointOfInterest, pk=pk)
     if request.method == 'POST':
@@ -780,29 +757,40 @@ def point_delete(request, pk):
 # TASHRIFLAR (Visit) — Telegram bilan
 # ════════════════════════════════════════════════
 
-@login_required
+@admin_required
 def visit_create(request):
     """
-    Agent tashrifni belgilash sahifasi. Saqlangandan keyin
-    avtomatik ravishda Telegramga mos xabar yuboriladi:
-    - Agar nuqtada shartnoma (cliente) bo'lmasa → "yangi mijoz" xabari
-    - Agar shartnoma bor bo'lsa → qarzdorlik bilan tashrif hisoboti
+    ⚠️ XAVFSIZLIK ESLATMASI:
+    Bu — ADMIN panel funksiyasi (@admin_required bilan himoyalangan), shuning
+    uchun bu yerda 'agent' ni POST'dan olish xavfli emas — chunki faqat
+    ishonchli admin/xodim bu formani to'ldira oladi va u istalgan agent
+    nomidan tashrif kiritishi ATAYLAB ruxsat etilgan (masalan qog'oz
+    jurnaldan ma'lumot kiritish uchun).
+
+    AGAR kelajakda agentlar o'zlari (agent panelidan) tashrif kiritadigan
+    bo'lsa — bu funksiyani NUSXA olmang! Bunday holatda agentni HECH QACHON
+    POST'dan olmang, faqat quyidagicha, tizimga kirgan foydalanuvchining
+    o'z profilidan oling:
+        visit.agent = request.user.agent_profile
+    Aks holda istalgan agent boshqa agent nomidan yozib qo'yishi mumkin (IDOR).
     """
     if request.method == 'POST':
         form = VisitForm(request.POST)
         if form.is_valid():
-            visit = form.save(commit=False)
-            # Hozircha agentni so'rovdan emas, formdan yoki
-            # tizimga kirgan foydalanuvchiga bog'liq agentdan olamiz.
-            # Oddiy holatda: ro'yxatdan agentni alohida tanlash maydoni qo'shilgan.
             agent_id = request.POST.get('agent')
-            if agent_id:
-                visit.agent = get_object_or_404(Agent, pk=agent_id)
+            agent = Agent.objects.filter(pk=agent_id, is_active=True).first() if agent_id else None
+
+            if not agent:
+                messages.error(request, "Agentni tanlashingiz shart.")
+                agents = Agent.objects.filter(is_active=True)
+                return render(request, 'points/visit_form.html', {'form': form, 'agents': agents})
+
+            visit = form.save(commit=False)
+            visit.agent = agent
             visit.save()
 
             point = visit.point
             if point.has_contract:
-                # Qarzdorlikni hisoblash
                 orders = Order.objects.filter(cliente=point.cliente).exclude(status='cancelled')
                 total_sales = orders.aggregate(s=Sum('total_sum'))['s'] or 0
                 total_paid = Payment.objects.filter(
@@ -822,7 +810,7 @@ def visit_create(request):
     return render(request, 'points/visit_form.html', {'form': form, 'agents': agents})
 
 
-@login_required
+@admin_required
 def visit_list(request):
     visits = Visit.objects.select_related('agent', 'point', 'point__cliente').all()
     return render(request, 'points/visit_list.html', {'visits': visits})
@@ -832,7 +820,7 @@ def visit_list(request):
 # BUYURTMA SO'ROVLARI (mijozdan kelgan)
 # ════════════════════════════════════════════════
 
-@login_required
+@admin_required
 def order_request_list(request):
     status_filter = request.GET.get('status', '')
     requests_qs = OrderRequest.objects.select_related('cliente').prefetch_related('items__product')
@@ -847,7 +835,7 @@ def order_request_list(request):
     })
 
 
-@login_required
+@admin_required
 def order_request_detail(request, pk):
     req = get_object_or_404(
         OrderRequest.objects.select_related('cliente').prefetch_related('items__product'),
@@ -856,7 +844,7 @@ def order_request_detail(request, pk):
     return render(request, 'order_requests/detail.html', {'req': req})
 
 
-@login_required
+@admin_required
 def order_request_approve(request, pk):
     req = get_object_or_404(OrderRequest, pk=pk)
     if request.method != 'POST':
@@ -866,7 +854,6 @@ def order_request_approve(request, pk):
         messages.warning(request, "Bu so'rov allaqachon ko'rib chiqilgan.")
         return redirect('order_request_detail', pk=pk)
 
-    # ─── Nakladnoy rasmi majburiy ───
     nak_picture = request.FILES.get('nak_picture')
     if not nak_picture:
         messages.error(request, "Tasdiqlashdan oldin nakladnoy rasmini yuklashingiz shart.")
@@ -877,49 +864,59 @@ def order_request_approve(request, pk):
         messages.error(request, "So'rovda tovar yo'q.")
         return redirect('order_request_detail', pk=pk)
 
-    for item in items:
-        if item.quantity > item.product.stock:
-            messages.error(
-                request,
-                f"Skladda faqat {item.product.stock} dona '{item.product.name}' bor "
-                f"(so'ralgan: {item.quantity})."
-            )
-            return redirect('order_request_detail', pk=pk)
-
     agent = req.cliente.agent
     if not agent:
         messages.error(request, "Mijozga agent biriktirilmagan — avval mijoz profilida agent tanlang.")
         return redirect('order_request_detail', pk=pk)
 
-    order = Order.objects.create(
-        cliente=req.cliente,
-        agent=agent,
-        payment_type=Order.PaymentType.DEBT,
-        note=req.note,
-        nak_picture=nak_picture,
-    )
-    total = 0
-    for item in items:
-        OrderItem.objects.create(
-            order=order, product=item.product,
-            quantity=item.quantity, price=item.price,
-        )
-        total += item.subtotal
-        item.product.stock -= item.quantity
-        item.product.save()
-    order.total_sum = total
-    order.save()
+    order = None
+    try:
+        with transaction.atomic():
+            order = Order.objects.create(
+                cliente=req.cliente,
+                agent=agent,
+                payment_type=Order.PaymentType.DEBT,
+                note=req.note,
+                nak_picture=nak_picture,
+            )
+            total = 0
+            for item in items:
+                # ─── Qatorni QULFLAYMIZ — parallel tasdiqlashlarda ham
+                # sklad hisobi noto'g'ri bo'lib qolmasligi uchun.
+                locked_product = Product.objects.select_for_update().get(pk=item.product_id)
 
-    req.status = OrderRequest.Status.APPROVED
-    req.order = order
-    req.date_reviewed = timezone.now()
-    req.save()
+                if item.quantity > locked_product.stock:
+                    raise StockError(
+                        f"Skladda faqat {locked_product.stock} dona '{locked_product.name}' bor "
+                        f"(so'ralgan: {item.quantity})."
+                    )
+
+                OrderItem.objects.create(
+                    order=order, product=locked_product,
+                    quantity=item.quantity, price=item.price,
+                )
+                total += item.subtotal
+                locked_product.stock -= item.quantity
+                locked_product.save()
+
+            order.total_sum = total
+            order.save()
+
+            req.status = OrderRequest.Status.APPROVED
+            req.order = order
+            req.date_reviewed = timezone.now()
+            req.save()
+    except StockError as e:
+        # Butun tranzaksiya (order, itemlar, sklad, so'rov holati) bekor
+        # qilindi — so'rov hali ham "kutilmoqda" holatida qoladi.
+        messages.error(request, str(e))
+        return redirect('order_request_detail', pk=pk)
 
     messages.success(request, f"So'rov tasdiqlandi — {order.number} nakladnoy yaratildi.")
     return redirect('order_detail', pk=order.pk)
 
 
-@login_required
+@admin_required
 def order_request_reject(request, pk):
     req = get_object_or_404(OrderRequest, pk=pk)
     if request.method == 'POST':

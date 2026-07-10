@@ -1,0 +1,22 @@
+# Maxfiy sozlamalar — hech qachon Git'ga tushmasin
+.env
+
+# Python
+__pycache__/
+*.pyc
+venv/
+env/
+
+# Django
+db.sqlite3
+media/
+static/
+*.log
+
+# IDE
+.idea/
+.vscode/
+
+agent/migrations/*
+apps/migrations/*
+client/migrations/*

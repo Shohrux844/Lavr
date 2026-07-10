@@ -1,8 +1,11 @@
 from django import forms
 from django.forms import inlineformset_factory
+from django.contrib.auth import get_user_model
 
 from apps.models import Product
 from client.models import Cliente, OrderRequest, OrderRequestItem
+
+User = get_user_model()
 
 ATTRS = {'class': 'form-control'}
 TEXTAREA = {'class': 'form-control', 'rows': 3}
@@ -56,9 +59,31 @@ OrderRequestItemFormSet = inlineformset_factory(
 
 
 class ClienteForm(forms.ModelForm):
+    """
+    Mijozni yaratish/tahrirlash formasi.
+
+    'user' select maydoni o'rniga to'g'ridan-to'g'ri 'username' + 'password'
+    orqali login hisobi shu formaning o'zida yaratiladi/yangilanadi.
+    Login ixtiyoriy — agar mijoz mijoz-panelidan foydalanmasa, bo'sh qoldirish mumkin.
+    """
+
+    username = forms.CharField(
+        label="Login (username)",
+        max_length=150,
+        required=False,
+        help_text="Mijoz mijoz-panelga shu login bilan kiradi (ixtiyoriy).",
+    )
+    password = forms.CharField(
+        label="Parol",
+        widget=forms.PasswordInput(render_value=False),
+        required=False,
+        help_text="Yangi login uchun majburiy. Tahrirlashda — o'zgartirmoqchi "
+                  "bo'lmasangiz bo'sh qoldiring.",
+    )
+
     class Meta:
         model = Cliente
-        fields = ['first_name', 'last_name', 'firma_name', 'alternative_name', 'phone', 'address', 'agent', 'user']
+        fields = ['first_name', 'last_name', 'firma_name', 'alternative_name', 'phone', 'address', 'agent']
         labels = {
             'first_name': 'Ism',
             'last_name': 'Familiya',
@@ -67,11 +92,55 @@ class ClienteForm(forms.ModelForm):
             'phone': 'Telefon',
             'address': 'Manzil',
             'agent': 'Agent',
-            'user': 'Login hisobi (User)',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['user'].required = False
+        if self.instance and self.instance.pk and self.instance.user_id:
+            self.fields['username'].initial = self.instance.user.username
         for f in self.fields.values():
             f.widget.attrs.update(ATTRS)
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username', '').strip()
+        if not username:
+            return username
+
+        qs = User.objects.filter(username=username)
+        if self.instance and self.instance.pk and self.instance.user_id:
+            qs = qs.exclude(pk=self.instance.user_id)
+        if qs.exists():
+            raise forms.ValidationError("Bu login (username) allaqachon band — boshqasini tanlang.")
+        return username
+
+    def clean(self):
+        cleaned_data = super().clean()
+        username = cleaned_data.get('username')
+        password = cleaned_data.get('password')
+        has_existing_user = bool(self.instance and self.instance.pk and self.instance.user_id)
+
+        if username and not has_existing_user and not password:
+            self.add_error('password', "Yangi login uchun parol kiritishingiz shart.")
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        cliente = super().save(commit=False)
+
+        username = self.cleaned_data.get('username')
+        password = self.cleaned_data.get('password')
+
+        if username:
+            if cliente.user_id:
+                user = cliente.user
+                user.username = username
+                if password:
+                    user.set_password(password)
+                user.save()
+            else:
+                user = User.objects.create_user(username=username, password=password)
+                cliente.user = user
+
+        if commit:
+            cliente.save()
+        return cliente
