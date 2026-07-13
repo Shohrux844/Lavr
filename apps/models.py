@@ -256,3 +256,46 @@ class Visit(Model):
         verbose_name = "Tashrif"
         verbose_name_plural = "Tashriflar"
         ordering = ['-date_created']
+
+
+# ──────────────────────────────────────────────
+# 12. Sklad harakati tarixi (Stock Ledger)
+# ──────────────────────────────────────────────
+class StockMovement(Model):
+    """
+    Har bir sklad o'zgarishini (kirim/chiqim) qayd qiladi — audit uchun.
+    product.stock ustidagi HAR bir += yoki -= amali shu yerda ham
+    yozib qo'yilishi kerak (order_create, order_request_approve,
+    order_delete/cancel, va h.k.).
+    """
+
+    class MovementType(TextChoices):
+        SALE = 'sale', "Sotildi (nakladnoy)"
+        RETURN = 'return', "Qaytarildi (nakladnoy bekor qilindi)"
+        MANUAL = 'manual', "Qo'lda tuzatish"
+
+    product = ForeignKey("apps.Product", on_delete=CASCADE, related_name='stock_movements')
+    order = ForeignKey(
+        "apps.Order", on_delete=SET_NULL, null=True, blank=True,
+        related_name='stock_movements',
+        help_text="Agar shu nakladnoy sababli bo'lsa"
+    )
+    movement_type = CharField(max_length=20, choices=MovementType.choices)
+    # Musbat son = kirim (skladga qo'shildi), manfiy son = chiqim (skladdan ayirildi)
+    quantity_change = IntegerField(help_text="Musbat = kirim, manfiy = chiqim")
+    stock_after = PositiveIntegerField(help_text="Amaldan keyingi qoldiq (tekshirish uchun)")
+    note = CharField(max_length=255, blank=True)
+    created_by = ForeignKey(
+        "apps.User", on_delete=SET_NULL, null=True, blank=True,
+        related_name='stock_movements'
+    )
+    date_created = DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        sign = '+' if self.quantity_change >= 0 else ''
+        return f"{self.product.name}: {sign}{self.quantity_change} ({self.get_movement_type_display()})"
+
+    class Meta:
+        verbose_name = "Sklad harakati"
+        verbose_name_plural = "Sklad harakatlari"
+        ordering = ['-date_created']

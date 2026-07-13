@@ -1,0 +1,24 @@
+{% comment %}
+Usage: {% include "partials/pagination.html" with page_obj=orders %}
+Diqqat: view'da GET filtrlari (q, status va h.k.) saqlanishi uchun
+request.GET.urlencode ishlatiladi, faqat 'page' parametri almashtiriladi.
+{% endcomment %}
+{% if page_obj.has_other_pages %}
+    <div style="display:flex; justify-content:center; align-items:center; gap:6px; margin-top:16px;">
+        {% if page_obj.has_previous %}
+            <a href="?{{ request.GET.urlencode }}&page={{ page_obj.previous_page_number }}" class="btn btn-sm">
+                <i class="ti ti-chevron-left"></i>
+            </a>
+        {% endif %}
+
+        <span style="font-size:12.5px; color:#888; padding:0 8px;">
+        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    </span>
+
+        {% if page_obj.has_next %}
+            <a href="?{{ request.GET.urlencode }}&page={{ page_obj.next_page_number }}" class="btn btn-sm">
+                <i class="ti ti-chevron-right"></i>
+            </a>
+        {% endif %}
+    </div>
+{% endif %}

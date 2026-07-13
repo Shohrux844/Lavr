@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
@@ -13,7 +14,7 @@ from client.models import Cliente, OrderRequest
 from .models import (
     Product,
     Order, OrderItem, Payment, Salary,
-    PointOfInterest, Visit,
+    PointOfInterest, Visit, StockMovement,
 )
 from .forms import (
     ProductForm,
@@ -21,6 +22,7 @@ from .forms import (
     PointOfInterestForm, VisitForm,
 )
 from .decorators import admin_required
+from .stock import record_stock_movement
 from . import telegram_bot
 
 
@@ -256,7 +258,10 @@ def product_list(request):
     elif status_filter == 'out':
         products = products.filter(stock=0)
 
-    context = {'products': products, 'q': q, 'status_filter': status_filter}
+    paginator = Paginator(products, 24)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    context = {'products': page_obj, 'page_obj': page_obj, 'q': q, 'status_filter': status_filter}
     return render(request, 'products/list.html', context)
 
 
@@ -264,9 +269,11 @@ def product_list(request):
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
     recent_items = product.order_items.select_related('order__cliente')[:10]
+    recent_movements = product.stock_movements.select_related('order', 'created_by')[:15]
     return render(request, 'products/detail.html', {
         'product': product,
         'recent_items': recent_items,
+        'recent_movements': recent_movements,
     })
 
 
@@ -287,9 +294,21 @@ def product_create(request):
 def product_update(request, pk):
     product = get_object_or_404(Product, pk=pk)
     if request.method == 'POST':
+        old_stock = product.stock
         form = ProductForm(request.POST, request.FILES, instance=product)
         if form.is_valid():
-            form.save()
+            with transaction.atomic():
+                updated_product = form.save()
+                diff = updated_product.stock - old_stock
+                if diff != 0:
+                    StockMovement.objects.create(
+                        product=updated_product,
+                        movement_type=StockMovement.MovementType.MANUAL,
+                        quantity_change=diff,
+                        stock_after=updated_product.stock,
+                        note="Admin tomonidan qo'lda tuzatildi",
+                        created_by=request.user,
+                    )
             messages.success(request, "Tovar yangilandi.")
             return redirect('product_detail', pk=pk)
     else:
@@ -335,8 +354,12 @@ def order_list(request):
     if date_to:
         orders = orders.filter(date_created__date__lte=date_to)
 
+    paginator = Paginator(orders, 30)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     context = {
-        'orders': orders,
+        'orders': page_obj,
+        'page_obj': page_obj,
         'q': q,
         'status_filter': status_filter,
         'date_from': date_from,
@@ -406,8 +429,12 @@ def order_create(request):
                             item.save()
                             total += item.subtotal
 
-                            locked_product.stock -= quantity
-                            locked_product.save()
+                            record_stock_movement(
+                                locked_product, -quantity,
+                                StockMovement.MovementType.SALE,
+                                order=order, user=request.user,
+                                note=f"{order.number} orqali sotildi",
+                            )
 
                         order.total_sum = total
                         order.save()
@@ -463,10 +490,35 @@ def order_update(request, pk):
 @admin_required
 def order_delete(request, pk):
     order = get_object_or_404(Order, pk=pk)
+
+    if order.status == Order.Status.CANCELLED:
+        messages.warning(request, "Bu nakladnoy allaqachon bekor qilingan.")
+        return redirect('order_detail', pk=pk)
+
     if request.method == 'POST':
-        order.delete()
-        messages.success(request, "Nakladnoy o'chirildi.")
-        return redirect('order_list')
+        with transaction.atomic():
+            # ─── Sklad hisobini tiklaymiz ───
+            # Nakladnoy bekor qilinganda, undagi tovarlar sklad hisobiga
+            # qaytarib qo'yiladi (aks holda tovar "yo'qolib qoladi").
+            # select_for_update — bir vaqtda boshqa buyurtma shu tovarni
+            # sotayotgan bo'lsa ham, hisob to'g'ri qolishi uchun.
+            for item in order.items.select_related('product').all():
+                locked_product = Product.objects.select_for_update().get(pk=item.product_id)
+                record_stock_movement(
+                    locked_product, item.quantity,
+                    StockMovement.MovementType.RETURN,
+                    order=order, user=request.user,
+                    note=f"{order.number} bekor qilingani sababli qaytarildi",
+                )
+
+            # Yozuv o'chirilmaydi — faqat holati "bekor qilingan"ga o'zgaradi.
+            # Shu bilan moliyaviy tarix (audit) butunlay saqlanib qoladi.
+            order.status = Order.Status.CANCELLED
+            order.save()
+
+        messages.success(request, f"{order.number} nakladnoy bekor qilindi, sklad hisobiga tovarlar qaytarildi.")
+        return redirect('order_detail', pk=pk)
+
     return render(request, 'confirm_delete.html', {'object': order, 'type': 'Nakladnoy'})
 
 
@@ -507,8 +559,12 @@ def payment_list(request):
 
     total_amount = payments.aggregate(s=Sum('amount'))['s'] or 0
 
+    paginator = Paginator(payments, 30)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     context = {
-        'payments': payments,
+        'payments': page_obj,
+        'page_obj': page_obj,
         'total_amount': total_amount,
         'method_filter': method_filter,
         'confirmed_filter': confirmed_filter,
@@ -670,6 +726,44 @@ def get_product_price(request):
         return JsonResponse({'price': product.price, 'stock': product.stock})
     except Product.DoesNotExist:
         return JsonResponse({'error': 'Tovar topilmadi'}, status=404)
+
+
+@admin_required
+def stock_movement_list(request):
+    q = request.GET.get('q', '')
+    movement_type = request.GET.get('movement_type', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+
+    movements = StockMovement.objects.select_related('product', 'order', 'created_by').all()
+
+    if q:
+        movements = movements.filter(
+            Q(product__name__icontains=q) |
+            Q(product__sku__icontains=q) |
+            Q(note__icontains=q) |
+            Q(order__number__icontains=q)
+        )
+    if movement_type:
+        movements = movements.filter(movement_type=movement_type)
+    if date_from:
+        movements = movements.filter(date_created__date__gte=date_from)
+    if date_to:
+        movements = movements.filter(date_created__date__lte=date_to)
+
+    paginator = Paginator(movements, 40)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    context = {
+        'movements': page_obj,
+        'page_obj': page_obj,
+        'q': q,
+        'movement_type': movement_type,
+        'date_from': date_from,
+        'date_to': date_to,
+        'movement_type_choices': StockMovement.MovementType.choices,
+    }
+    return render(request, 'stock_movements/list.html', context)
 
 
 # ════════════════════════════════════════════════
@@ -896,8 +990,12 @@ def order_request_approve(request, pk):
                     quantity=item.quantity, price=item.price,
                 )
                 total += item.subtotal
-                locked_product.stock -= item.quantity
-                locked_product.save()
+                record_stock_movement(
+                    locked_product, -item.quantity,
+                    StockMovement.MovementType.SALE,
+                    order=order, user=request.user,
+                    note=f"{order.number} (mijoz so'rovi #{req.pk}) orqali sotildi",
+                )
 
             order.total_sum = total
             order.save()

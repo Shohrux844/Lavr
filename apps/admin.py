@@ -3,7 +3,7 @@ from django.contrib import admin
 from .models import (
     User, Product,
     Order, OrderItem, Payment, Salary,
-    PointOfInterest, Visit,
+    PointOfInterest, Visit, StockMovement,
 )
 
 
@@ -61,3 +61,11 @@ class VisitAdmin(admin.ModelAdmin):
     list_display = ['agent', 'point', 'telegram_sent', 'date_created']
     list_filter = ['telegram_sent']
     readonly_fields = ['telegram_sent']
+
+
+@admin.register(StockMovement)
+class StockMovementAdmin(admin.ModelAdmin):
+    list_display = ['product', 'movement_type', 'quantity_change', 'stock_after', 'order', 'created_by', 'date_created']
+    list_filter = ['movement_type', 'date_created']
+    search_fields = ['product__name', 'product__sku', 'note']
+    readonly_fields = ['stock_after', 'date_created']

@@ -64,42 +64,97 @@
             </a>
         </div>
 
-        <!-- So'nggi sotuvlar -->
-        <div class="card">
-            <div style="padding:14px 16px; border-bottom:1px solid #EBEBEB; font-size:14px; font-weight:500;">
-                So'nggi sotuvlar
+        <!-- O'ng ustun: so'nggi sotuvlar + sklad tarixi -->
+        <div>
+            <div class="card" style="margin-bottom:16px;">
+                <div style="padding:14px 16px; border-bottom:1px solid #EBEBEB; font-size:14px; font-weight:500;">
+                    So'nggi sotuvlar
+                </div>
+                <table class="table-base">
+                    <thead>
+                    <tr>
+                        <th>Nakladnoy</th>
+                        <th>Mijoz</th>
+                        <th>Miqdor</th>
+                        <th>Narx</th>
+                        <th>Jami</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in recent_items %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'order_detail' item.order.pk %}"
+                                   style="color:#534AB7; text-decoration:none; font-weight:500;">
+                                    {{ item.order.number }}
+                                </a>
+                            </td>
+                            <td>{{ item.order.cliente }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.price|floatformat:0 }}</td>
+                            <td style="font-weight:500;">{{ item.subtotal|floatformat:0 }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align:center; color:#aaa; padding:24px;">Hali sotilmagan</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <table class="table-base">
-                <thead>
-                <tr>
-                    <th>Nakladnoy</th>
-                    <th>Mijoz</th>
-                    <th>Miqdor</th>
-                    <th>Narx</th>
-                    <th>Jami</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for item in recent_items %}
+
+            <!-- Sklad harakati tarixi -->
+            <div class="card">
+                <div style="padding:14px 16px; border-bottom:1px solid #EBEBEB; font-size:14px; font-weight:500;">
+                    <i class="ti ti-history"></i> Sklad harakati tarixi
+                </div>
+                <table class="table-base">
+                    <thead>
                     <tr>
-                        <td>
-                            <a href="{% url 'order_detail' item.order.pk %}"
-                               style="color:#534AB7; text-decoration:none; font-weight:500;">
-                                {{ item.order.number }}
-                            </a>
-                        </td>
-                        <td>{{ item.order.cliente }}</td>
-                        <td>{{ item.quantity }}</td>
-                        <td>{{ item.price|floatformat:0 }}</td>
-                        <td style="font-weight:500;">{{ item.subtotal|floatformat:0 }}</td>
+                        <th>Sana</th>
+                        <th>Turi</th>
+                        <th>O'zgarish</th>
+                        <th>Qoldiq</th>
+                        <th>Izoh</th>
                     </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="5" style="text-align:center; color:#aaa; padding:24px;">Hali sotilmagan</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    {% for m in recent_movements %}
+                        <tr>
+                            <td style="color:#888; font-size:12px;">{{ m.date_created|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                {% if m.movement_type == 'sale' %}
+                                    <span class="badge badge-red">Sotildi</span>
+                                {% elif m.movement_type == 'return' %}
+                                    <span class="badge badge-green">Qaytdi</span>
+                                {% else %}
+                                    <span class="badge badge-blue">Qo'lda</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-weight:600; color:{% if m.quantity_change >= 0 %}#3B6D11{% else %}#A32D2D{% endif %};">
+                                {% if m.quantity_change >= 0 %}+{% endif %}{{ m.quantity_change }}
+                            </td>
+                            <td>{{ m.stock_after }}</td>
+                            <td style="color:#888; font-size:12px;">
+                                {{ m.note }}
+                                {% if m.order %}
+                                    <a href="{% url 'order_detail' m.order.pk %}"
+                                       style="color:#534AB7; text-decoration:none;">
+                                        ({{ m.order.number }})
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align:center; color:#aaa; padding:24px;">Hali sklad harakati
+                                yo'q
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 {% endblock %}

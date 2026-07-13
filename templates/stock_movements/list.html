@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Sklad tarixi{% endblock %}
+{% block breadcrumb %}
+    <a href="{% url 'product_list' %}" style="color:#aaa;text-decoration:none;">Tovarlar</a> / Sklad tarixi
+{% endblock %}
+
+{% block content %}
+    <!-- Filter paneli -->
+    <div class="card" style="padding:14px 16px; margin-bottom:16px;">
+        <form method="get" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+            <div>
+                <label class="form-label">Qidirish</label>
+                <input type="text" name="q" value="{{ q }}" placeholder="Tovar, SKU, nakladnoy, izoh..."
+                       class="form-control" style="width:240px;">
+            </div>
+            <div>
+                <label class="form-label">Turi</label>
+                <select name="movement_type" class="form-control" style="width:170px;">
+                    <option value="">Hammasi</option>
+                    {% for val, label in movement_type_choices %}
+                        <option value="{{ val }}" {% if movement_type == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Dan</label>
+                <input type="date" name="date_from" value="{{ date_from }}" class="form-control" style="width:150px;">
+            </div>
+            <div>
+                <label class="form-label">Gacha</label>
+                <input type="date" name="date_to" value="{{ date_to }}" class="form-control" style="width:150px;">
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="ti ti-search"></i> Qidirish</button>
+            {% if q or movement_type or date_from or date_to %}
+                <a href="{% url 'stock_movement_list' %}" class="btn">Tozalash</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="card">
+        <div style="overflow-x:auto;">
+            <table class="table-base">
+                <thead>
+                <tr>
+                    <th>Sana</th>
+                    <th>Tovar</th>
+                    <th>Turi</th>
+                    <th>O'zgarish</th>
+                    <th>Qoldiq</th>
+                    <th>Nakladnoy</th>
+                    <th>Kim</th>
+                    <th>Izoh</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for m in movements %}
+                    <tr>
+                        <td style="color:#888; font-size:12px; white-space:nowrap;">{{ m.date_created|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'product_detail' m.product.pk %}"
+                               style="color:#534AB7; text-decoration:none; font-weight:500;">
+                                {{ m.product.name }}
+                            </a>
+                            <div style="font-size:11px; color:#888;">{{ m.product.sku }}</div>
+                        </td>
+                        <td>
+                            {% if m.movement_type == 'sale' %}
+                                <span class="badge badge-red">Sotildi</span>
+                            {% elif m.movement_type == 'return' %}
+                                <span class="badge badge-green">Qaytdi</span>
+                            {% else %}
+                                <span class="badge badge-blue">Qo'lda</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-weight:600; color:{% if m.quantity_change >= 0 %}#3B6D11{% else %}#A32D2D{% endif %};">
+                            {% if m.quantity_change >= 0 %}+{% endif %}{{ m.quantity_change }}
+                        </td>
+                        <td>{{ m.stock_after }}</td>
+                        <td>
+                            {% if m.order %}
+                                <a href="{% url 'order_detail' m.order.pk %}"
+                                   style="color:#534AB7; text-decoration:none;">
+                                    {{ m.order.number }}
+                                </a>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td style="color:#888; font-size:12px;">{{ m.created_by|default:"—" }}</td>
+                        <td style="color:#888; font-size:12px;">{{ m.note|default:"—"|truncatechars:40 }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align:center; color:#aaa; padding:32px;">Sklad harakati topilmadi
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% include "partials/pagination.html" with page_obj=page_obj %}
+{% endblock %}

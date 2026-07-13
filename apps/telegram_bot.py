@@ -113,6 +113,26 @@ def notify_visit_report(visit, debt_amount=0):
         visit.save(update_fields=['telegram_sent'])
     return sent
 
+
+def notify_debt_reminder(cliente, debt_amount, days_overdue, oldest_order_number):
+    """
+    Mijozning uzoq vaqtdan beri to'lanmagan qarzi haqida adminga
+    Telegram orqali eslatma yuboradi.
+    """
+    text = (
+        f"⏰ <b>Qarzdorlik eslatmasi</b>\n\n"
+        f"<b>Mijoz:</b> {cliente.first_name} {cliente.last_name}"
+        f"{' (' + cliente.firma_name + ')' if cliente.firma_name else ''}\n"
+        f"<b>Telefon:</b> {cliente.phone or '—'}\n"
+        f"<b>Qarz summasi:</b> {debt_amount:,.0f} so'm 🔴\n"
+        f"<b>Eng eski qarzdor nakladnoy:</b> {oldest_order_number}\n"
+        f"<b>To'lanmagan kunlar:</b> {days_overdue} kun\n"
+    )
+    if cliente.agent:
+        text += f"<b>Agent:</b> {cliente.agent.first_name} {cliente.agent.last_name}\n"
+
+    return send_telegram_message(text)
+
 # ════════════════════════════════════════════════════════════
 # CHAT ID OLISH — bir martalik qadam
 # ════════════════════════════════════════════════════════════

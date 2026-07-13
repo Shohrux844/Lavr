@@ -26,6 +26,7 @@ urlpatterns = [
     path('products/<int:pk>/delete/', views.product_delete, name='product_delete'),
     path('products/export/excel/', exports.product_export_excel, name='product_export_excel'),
     path('products/export/pdf/', exports.product_export_pdf, name='product_export_pdf'),
+    path('stock-movements/', views.stock_movement_list, name='stock_movement_list'),
 
     # ─── Nakladnoylar ─────────────────────────────────
     path('orders/', views.order_list, name='order_list'),
@@ -35,7 +36,6 @@ urlpatterns = [
     path('orders/<int:pk>/delete/', views.order_delete, name='order_delete'),
     path('orders/export/excel/', exports.order_export_excel, name='order_export_excel'),
     path('orders/export/pdf/', exports.order_export_pdf, name='order_export_pdf'),
-
 
     # ─── To'lovlar (Perechesleniye) ───────────────────
     path('payments/', views.payment_list, name='payment_list'),
@@ -65,7 +65,7 @@ urlpatterns = [
     path('visits/', views.visit_list, name='visit_list'),
     path('visits/create/', views.visit_create, name='visit_create'),
 
-# ─── Buyurtma so'rovlari ───────────────────────────
+    # ─── Buyurtma so'rovlari ───────────────────────────
     path('order-requests/', views.order_request_list, name='order_request_list'),
     path('order-requests/<int:pk>/', views.order_request_detail, name='order_request_detail'),
     path('order-requests/<int:pk>/approve/', views.order_request_approve, name='order_request_approve'),
