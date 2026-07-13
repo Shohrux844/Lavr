@@ -34,6 +34,7 @@ urlpatterns = [
     path('orders/<int:pk>/', views.order_detail, name='order_detail'),
     path('orders/<int:pk>/edit/', views.order_update, name='order_update'),
     path('orders/<int:pk>/delete/', views.order_delete, name='order_delete'),
+    path('orders/<int:pk>/return/', views.order_return_create, name='order_return_create'),
     path('orders/export/excel/', exports.order_export_excel, name='order_export_excel'),
     path('orders/export/pdf/', exports.order_export_pdf, name='order_export_pdf'),
 

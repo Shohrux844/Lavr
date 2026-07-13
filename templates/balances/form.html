@@ -1,24 +1,88 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
-{% block breadcrumb %}<a href="{% url 'agent_balance_list' %}" style="color:#aaa;text-decoration:none;">Ostatka</a> / {{ title }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'agent_balance_list' %}" style="color:#aaa;text-decoration:none;">Ostatka</a> /
+    {{ title }}{% endblock %}
 {% block content %}
-<div style="max-width:560px;">
-  <div class="card" style="padding:24px;">
-    <h2 style="font-size:16px; font-weight:600; margin-bottom:20px;">{{ title }}</h2>
-    <form method="post">
-      {% csrf_token %}
-      {% for field in form %}
-      <div class="form-group">
-        <label class="form-label">{{ field.label }}</label>
-        {{ field }}
-        {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
-      </div>
-      {% endfor %}
-      <div style="display:flex; gap:10px; margin-top:8px;">
-        <button type="submit" class="btn btn-primary"><i class="ti ti-check"></i> Saqlash</button>
-        <a href="{% url 'agent_balance_list' %}" class="btn">Bekor qilish</a>
-      </div>
-    </form>
-  </div>
-</div>
+    <div style="max-width:560px;">
+        <div class="card" style="padding:24px;">
+            <h2 style="font-size:16px; font-weight:600; margin-bottom:20px;">{{ title }}</h2>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-group">
+                        <label class="form-label">{{ field.label }}</label>
+
+                        {% if field.name == 'given_amount' %}
+                            <div style="display:flex; gap:8px;">
+                                <div style="flex:1;">{{ field }}</div>
+                                <button type="button" id="auto-calc-btn" class="btn"
+                                        style="flex-shrink:0; white-space:nowrap;">
+                                    <i class="ti ti-calculator"></i> Avtomatik hisoblash
+                                </button>
+                            </div>
+                            <div id="auto-calc-hint" style="font-size:11px; color:#888; margin-top:4px; display:none;">
+                                <i class="ti ti-info-circle"></i> Tanlangan sana uchun yig'ilgan tasdiqlangan naqd
+                                to'lovlar asosida hisoblandi
+                            </div>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+
+                        {% if field.errors %}
+                            <div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                    <button type="submit" class="btn btn-primary"><i class="ti ti-check"></i> Saqlash</button>
+                    <a href="{% url 'agent_balance_list' %}" class="btn">Bekor qilish</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // "Avtomatik hisoblash" tugmasi — tanlangan agent va sana uchun
+        // o'sha kuni yig'ilgan tasdiqlangan naqd to'lovlar summasini so'raydi
+        // va "Berildi" maydoniga avtomatik tashlab beradi (admin xohlasa tuzatishi mumkin).
+        const autoCalcBtn = document.getElementById('auto-calc-btn');
+        if (autoCalcBtn) {
+            autoCalcBtn.addEventListener('click', function () {
+                const agentSelect = document.getElementById('id_agent');
+                const dateInput = document.getElementById('id_date');
+                const givenInput = document.getElementById('id_given_amount');
+                const hint = document.getElementById('auto-calc-hint');
+
+                if (!agentSelect.value) {
+                    alert("Avval agentni tanlang.");
+                    return;
+                }
+
+                const params = new URLSearchParams({
+                    agent_id: agentSelect.value,
+                    date: dateInput.value || '',
+                });
+
+                autoCalcBtn.disabled = true;
+                autoCalcBtn.innerHTML = '<i class="ti ti-loader-2"></i> Hisoblanmoqda...';
+
+                fetch("{% url 'agent_balance_calculate_ajax' %}?" + params.toString())
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.given_amount !== undefined) {
+                            givenInput.value = data.given_amount;
+                            hint.style.display = 'block';
+                        } else {
+                            alert(data.error || "Hisoblashda xatolik yuz berdi.");
+                        }
+                    })
+                    .catch(() => alert("Server bilan aloqa xatosi."))
+                    .finally(() => {
+                        autoCalcBtn.disabled = false;
+                        autoCalcBtn.innerHTML = '<i class="ti ti-calculator"></i> Avtomatik hisoblash';
+                    });
+            });
+        }
+    </script>
 {% endblock %}

@@ -15,6 +15,7 @@ from .models import (
     Product,
     Order, OrderItem, Payment, Salary,
     PointOfInterest, Visit, StockMovement,
+    OrderReturn, OrderReturnItem,
 )
 from .forms import (
     ProductForm,
@@ -520,6 +521,101 @@ def order_delete(request, pk):
         return redirect('order_detail', pk=pk)
 
     return render(request, 'confirm_delete.html', {'object': order, 'type': 'Nakladnoy'})
+
+
+@admin_required
+def order_return_create(request, pk):
+    """
+    Mijoz sotib olgan tovarni (to'liq yoki qisman) qaytarganda ishlatiladi.
+
+    MUHIM: OrderItem.quantity ning O'ZI kamaytiriladi (shunchaki alohida
+    yozuv qilinmaydi) — shuning uchun admin, agent va mijoz panellaridagi
+    nakladnoy sahifalari BARCHASI avtomatik yangi (qaytarilgandan keyingi)
+    miqdorni ko'rsatadi, chunki ular bir xil order.items.all() dan o'qiydi.
+    Har bir vozvrat, shunga qaramay, OrderReturn/OrderReturnItem orqali
+    alohida audit-yozuv sifatida ham saqlanadi.
+    """
+    order = get_object_or_404(Order.objects.prefetch_related('items__product'), pk=pk)
+
+    if order.status == Order.Status.CANCELLED:
+        messages.error(request, "Bekor qilingan nakladnoy uchun vozvrat qilib bo'lmaydi.")
+        return redirect('order_detail', pk=pk)
+
+    # Faqat hali qoldig'i bor (quantity > 0) tovarlarni ko'rsatamiz
+    items_info = [
+        {'item': item, 'remaining': item.quantity}
+        for item in order.items.select_related('product').all()
+        if item.quantity > 0
+    ]
+
+    if request.method == 'POST':
+        note = request.POST.get('note', '')
+        rows_to_process = []
+        has_error = False
+
+        for info in items_info:
+            item = info['item']
+            try:
+                qty = int(request.POST.get(f'qty_{item.pk}', '0') or 0)
+            except ValueError:
+                qty = 0
+            if qty <= 0:
+                continue
+            if qty > item.quantity:
+                messages.error(
+                    request,
+                    f"'{item.product.name}' uchun ko'pi bilan {item.quantity} dona "
+                    f"qaytarish mumkin (kiritildi: {qty})."
+                )
+                has_error = True
+            else:
+                rows_to_process.append((item, qty))
+
+        if not has_error and not rows_to_process:
+            messages.error(request, "Kamida bitta tovar uchun qaytariladigan miqdorni kiriting.")
+            has_error = True
+
+        if not has_error:
+            with transaction.atomic():
+                order_return = OrderReturn.objects.create(order=order, note=note, created_by=request.user)
+                total_returned = 0
+
+                for item, qty in rows_to_process:
+                    OrderReturnItem.objects.create(
+                        order_return=order_return, product=item.product,
+                        quantity=qty, price=item.price,
+                    )
+                    total_returned += qty * item.price
+
+                    # ─── OrderItem.quantity ning o'zini kamaytiramiz ───
+                    # Shu bilan admin/agent/mijoz panellarida nakladnoy
+                    # sahifasi avtomatik yangi miqdorni ko'rsatadi.
+                    item.quantity -= qty
+                    item.save()
+
+                    locked_product = Product.objects.select_for_update().get(pk=item.product_id)
+                    record_stock_movement(
+                        locked_product, qty,
+                        StockMovement.MovementType.CLIENT_RETURN,
+                        order=order, user=request.user,
+                        note=f"{order.number} — mijoz qaytardi (vozvrat #{order_return.pk})",
+                    )
+
+                order.total_sum -= total_returned
+                order.save()
+                _update_order_status(order)
+
+            messages.success(
+                request,
+                f"Vozvrat qayd etildi — {total_returned:,.0f} so'm nakladnoy summasidan ayirildi, "
+                f"sklad tiklandi."
+            )
+            return redirect('order_detail', pk=pk)
+
+    return render(request, 'orders/return_form.html', {
+        'order': order,
+        'items_info': items_info,
+    })
 
 
 # ════════════════════════════════════════════════

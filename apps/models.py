@@ -272,6 +272,7 @@ class StockMovement(Model):
     class MovementType(TextChoices):
         SALE = 'sale', "Sotildi (nakladnoy)"
         RETURN = 'return', "Qaytarildi (nakladnoy bekor qilindi)"
+        CLIENT_RETURN = 'client_return', "Mijoz tovarni qaytardi"
         MANUAL = 'manual', "Qo'lda tuzatish"
 
     product = ForeignKey("apps.Product", on_delete=CASCADE, related_name='stock_movements')
@@ -299,3 +300,51 @@ class StockMovement(Model):
         verbose_name = "Sklad harakati"
         verbose_name_plural = "Sklad harakatlari"
         ordering = ['-date_created']
+
+
+# ──────────────────────────────────────────────
+# 13. Vozvrat (mijoz tovarni qaytarganda)
+# ──────────────────────────────────────────────
+class OrderReturn(Model):
+    """
+    Bitta nakladnoy bo'yicha mijoz qaytargan tovarlarni qayd qiluvchi hujjat.
+    Bir nakladnoy uchun bir necha marta (qisman) vozvrat bo'lishi mumkin —
+    shuning uchun har bir vozvrat alohida yozuv sifatida saqlanadi.
+    """
+    order = ForeignKey("apps.Order", on_delete=CASCADE, related_name='returns')
+    note = TextField(blank=True, help_text="Qaytarish sababi (ixtiyoriy)")
+    created_by = ForeignKey(
+        "apps.User", on_delete=SET_NULL, null=True, blank=True,
+        related_name='order_returns'
+    )
+    date_created = DateTimeField(auto_now_add=True)
+
+    @property
+    def total_amount(self):
+        return sum(i.subtotal for i in self.items.all())
+
+    def __str__(self):
+        return f"Vozvrat #{self.pk} — {self.order.number}"
+
+    class Meta:
+        verbose_name = "Vozvrat"
+        verbose_name_plural = "Vozvratlar"
+        ordering = ['-date_created']
+
+
+class OrderReturnItem(Model):
+    order_return = ForeignKey("apps.OrderReturn", on_delete=CASCADE, related_name='items')
+    product = ForeignKey("apps.Product", on_delete=CASCADE, related_name='return_items')
+    quantity = PositiveIntegerField()
+    price = IntegerField(help_text="Sotilgan paytdagi narx (nakladnoydan olinadi)")
+
+    @property
+    def subtotal(self):
+        return self.quantity * self.price
+
+    def __str__(self):
+        return f"{self.product.name} x{self.quantity}"
+
+    class Meta:
+        verbose_name = "Vozvrat qatori"
+        verbose_name_plural = "Vozvrat qatorlari"

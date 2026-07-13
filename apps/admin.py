@@ -4,6 +4,7 @@ from .models import (
     User, Product,
     Order, OrderItem, Payment, Salary,
     PointOfInterest, Visit, StockMovement,
+    OrderReturn, OrderReturnItem,
 )
 
 
@@ -69,3 +70,15 @@ class StockMovementAdmin(admin.ModelAdmin):
     list_filter = ['movement_type', 'date_created']
     search_fields = ['product__name', 'product__sku', 'note']
     readonly_fields = ['stock_after', 'date_created']
+
+
+class OrderReturnItemInline(admin.TabularInline):
+    model = OrderReturnItem
+    extra = 0
+
+
+@admin.register(OrderReturn)
+class OrderReturnAdmin(admin.ModelAdmin):
+    list_display = ['id', 'order', 'created_by', 'date_created']
+    search_fields = ['order__number']
+    inlines = [OrderReturnItemInline]

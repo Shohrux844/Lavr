@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Vozvrat — {{ order.number }}{% endblock %}
+{% block breadcrumb %}
+    <a href="{% url 'order_detail' order.pk %}" style="color:#aaa;text-decoration:none;">{{ order.number }}</a> /
+    Vozvrat
+{% endblock %}
+
+{% block content %}
+    <div style="max-width:640px;">
+        <div class="card" style="padding:24px;">
+            <h2 style="font-size:16px; font-weight:600; margin-bottom:4px;">Tovarni qaytarish</h2>
+            <div style="font-size:12px; color:#888; margin-bottom:20px;">
+                Mijoz qaytargan tovar(lar) uchun miqdorni kiriting. Faqat shu nakladnoy bo'yicha
+                hali qaytarilmagan miqdorgacha kiritish mumkin.
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <table class="table-base" style="margin-bottom:16px;">
+                    <thead>
+                    <tr>
+                        <th>Tovar</th>
+                        <th>Sotilgan</th>
+                        <th>Qaytarish mumkin</th>
+                        <th style="width:110px;">Qaytarilyapti</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for info in items_info %}
+                        <tr>
+                            <td style="font-weight:500;">{{ info.item.product.name }}</td>
+                            <td>{{ info.item.quantity }} dona</td>
+                            <td>
+                                {% if info.remaining > 0 %}
+                                    <span class="badge badge-blue">{{ info.remaining }} dona</span>
+                                {% else %}
+                                    <span class="badge badge-gray">Qolmagan</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if info.remaining > 0 %}
+                                    <input type="number" name="qty_{{ info.item.pk }}" class="form-control"
+                                           min="0" max="{{ info.remaining }}" value="0">
+                                {% else %}
+                                    <input type="number" class="form-control" value="0" disabled
+                                           style="background:#F5F5F7;">
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align:center; color:#aaa; padding:20px;">Tovar yo'q</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="form-group">
+                    <label class="form-label">Sababi (ixtiyoriy)</label>
+                    <textarea name="note" class="form-control" rows="3"
+                              placeholder="Masalan: mijoz noto'g'ri tovar oldi, brak chiqdi..."></textarea>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ti ti-arrow-back-up"></i> Vozvratni saqlash
+                    </button>
+                    <a href="{% url 'order_detail' order.pk %}" class="btn">Bekor qilish</a>
+                </div>
+            </form>
+        </div>
+
+        {% if order.returns.all %}
+            <div style="font-size:13px; font-weight:500; margin:20px 0 8px;">Oldingi vozvratlar</div>
+            <div class="card" style="overflow:hidden;">
+                {% for r in order.returns.all %}
+                    <div style="padding:12px 14px; border-bottom:1px solid #EBEBEB;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:13px; font-weight:500;">Vozvrat #{{ r.pk }}</span>
+                            <span style="font-size:12px; color:#888;">{{ r.date_created|date:"d.m.Y H:i" }}</span>
+                        </div>
+                        <div style="font-size:12px; color:#888; margin-top:4px;">
+                            {% for i in r.items.all %}
+                                {{ i.product.name }} × {{ i.quantity }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% if r.note %}
+                            <div style="font-size:12px; color:#555; margin-top:4px;">{{ r.note }}</div>
+                        {% endif %}
+                        <div style="font-size:13px; font-weight:600; margin-top:4px; color:#A32D2D;">
+                            -{{ r.total_amount|floatformat:0 }} so'm
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

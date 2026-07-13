@@ -60,15 +60,17 @@
     <div style="font-size:13px; font-weight:500; margin-bottom:8px;">Olingan tovarlar</div>
     <div class="card" style="overflow:hidden; margin-bottom:12px;">
         {% for item in order.items.all %}
-            <div style="padding:12px 14px; border-bottom:1px solid #EBEBEB; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <div style="font-size:13px; font-weight:500;">{{ item.product.name }}</div>
-                    <div style="font-size:11px; color:#888; margin-top:2px;">
-                        {{ item.price|floatformat:0 }} so'm × {{ item.quantity }} dona
+            {% if item.quantity > 0 %}
+                <div style="padding:12px 14px; border-bottom:1px solid #EBEBEB; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:13px; font-weight:500;">{{ item.product.name }}</div>
+                        <div style="font-size:11px; color:#888; margin-top:2px;">
+                            {{ item.price|floatformat:0 }} so'm × {{ item.quantity }} dona
+                        </div>
                     </div>
+                    <div style="font-weight:600;">{{ item.subtotal|floatformat:0 }}</div>
                 </div>
-                <div style="font-weight:600;">{{ item.subtotal|floatformat:0 }}</div>
-            </div>
+            {% endif %}
         {% empty %}
             <div style="text-align:center; color:#aaa; padding:20px; font-size:13px;">Tovar yo'q</div>
         {% endfor %}

@@ -7,6 +7,7 @@
     {% if order.status != 'cancelled' %}
         <a href="{% url 'order_update' order.pk %}" class="btn"><i class="ti ti-edit"></i> Tahrirlash</a>
         <a href="{% url 'payment_create' order.pk %}" class="btn btn-primary"><i class="ti ti-plus"></i> To'lov kiritish</a>
+        <a href="{% url 'order_return_create' order.pk %}" class="btn"><i class="ti ti-arrow-back-up"></i> Vozvrat</a>
         <a href="{% url 'order_delete' order.pk %}" class="btn btn-danger"><i class="ti ti-ban"></i> Bekor qilish</a>
     {% else %}
         <span class="badge badge-gray" style="font-size:12.5px; padding:6px 12px;"><i class="ti ti-ban"></i> Bekor qilingan</span>
@@ -81,13 +82,15 @@
                     </thead>
                     <tbody>
                     {% for item in order.items.all %}
-                        <tr>
-                            <td>{{ item.product.name }}</td>
-                            <td style="color:#888;">{{ item.product.sku }}</td>
-                            <td>{{ item.price|floatformat:0 }}</td>
-                            <td>{{ item.quantity }}</td>
-                            <td style="font-weight:500;">{{ item.subtotal|floatformat:0 }}</td>
-                        </tr>
+                        {% if item.quantity > 0 %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td style="color:#888;">{{ item.product.sku }}</td>
+                                <td>{{ item.price|floatformat:0 }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td style="font-weight:500;">{{ item.subtotal|floatformat:0 }}</td>
+                            </tr>
+                        {% endif %}
                     {% empty %}
                         <tr>
                             <td colspan="5" style="text-align:center;color:#aaa;padding:20px;">Tovar qo'shilmagan</td>

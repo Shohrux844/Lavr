@@ -22,6 +22,7 @@ urlpatterns = [
     path('balances/',              views.agent_balance_list,   name='agent_balance_list'),
     path('balances/create/',       views.agent_balance_create, name='agent_balance_create'),
     path('balances/<int:pk>/edit/',views.agent_balance_update, name='agent_balance_update'),
+    path('balances/ajax/calculate/', views.agent_balance_calculate_ajax, name='agent_balance_calculate_ajax'),
 
     # ── AGENT PANEL (/agent/ prefix bilan chaqiriladi) ──
     path('panel/',                   views.agent_dashboard,      name='agent_dashboard'),
