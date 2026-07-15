@@ -17,6 +17,8 @@ from django.db.models import (
     TextChoices,
 )
 
+from .image_utils import compress_image, image_field_changed
+
 
 # ──────────────────────────────────────────────
 # 1. Foydalanuvchi
@@ -49,6 +51,13 @@ class Product(Model):
         elif self.stock <= self.low_stock_threshold:
             return 'low'  # Kam qolgan
         return 'ok'  # Yetarli
+
+    def save(self, *args, **kwargs):
+        # Rasm yangi yuklangan/o'zgargan bo'lsagina siqamiz — tahrirlashda
+        # boshqa maydon (masalan narx) o'zgarganda qayta siqmaymiz.
+        if self.image and image_field_changed(Product, self.pk, 'image', self.image):
+            compress_image(self.image)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} ({self.sku})"
@@ -88,6 +97,10 @@ class Order(Model):
     date_updated = DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
+        # Rasm yangi yuklangan/o'zgargan bo'lsagina siqamiz
+        if self.nak_picture and image_field_changed(Order, self.pk, 'nak_picture', self.nak_picture):
+            compress_image(self.nak_picture)
+
         # Nakladnoy raqamini avtomatik yaratish: NK-0001
         if not self.number:
             super().save(*args, **kwargs)
@@ -144,6 +157,11 @@ class Payment(Model):
     confirmed = BooleanField(default=False, help_text="Admin tasdiqladi")
     note = TextField(blank=True)
     date_created = DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.screenshot and image_field_changed(Payment, self.pk, 'screenshot', self.screenshot):
+            compress_image(self.screenshot)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.order.number} | {self.amount} so'm | {self.get_method_display()}"
