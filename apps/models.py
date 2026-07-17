@@ -16,6 +16,8 @@ from django.db.models import (
     BooleanField,
     TextChoices,
 )
+from django.utils.text import slugify
+from django.db.models import SlugField, PositiveIntegerField
 
 from .image_utils import compress_image, image_field_changed
 
@@ -30,9 +32,35 @@ class User(AbstractUser):
 # ──────────────────────────────────────────────
 # 5. Tovar (Mahsulot) — Sklad
 # ──────────────────────────────────────────────
+
+class Category(Model):
+    name = CharField(max_length=100)
+    slug = SlugField(max_length=100, unique=True, blank=True)
+    icon = CharField(max_length=50, default='ti-package',
+                     help_text="Tabler icon klassi, masalan: ti-star, ti-flask, ti-car")
+    order = PositiveIntegerField(default=0)
+    is_active = BooleanField(default=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Kategoriya"
+        verbose_name_plural = "Kategoriyalar"
+        ordering = ['order', 'name']
+
+
 class Product(Model):
     name = CharField(max_length=255)
     sku = CharField(max_length=50, unique=True, help_text="Tovar kodi, masalan: YG-001")
+    category = ForeignKey(
+        "apps.Category", on_delete=SET_NULL, null=True, blank=True, related_name='products'
+    )
     image = ImageField(upload_to='products/', null=True, blank=True)
     description = TextField(blank=True)
     price = IntegerField(default=0, help_text="So'mda narx")

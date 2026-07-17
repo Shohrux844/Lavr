@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 from datetime import date, timedelta
 import calendar
+import openpyxl
 
 from agent.models import AgentBalance, Agent
 from client.forms import ClienteForm
@@ -15,7 +16,7 @@ from .models import (
     Product,
     Order, OrderItem, Payment, Salary,
     PointOfInterest, Visit, StockMovement,
-    OrderReturn, OrderReturnItem,
+    OrderReturn, OrderReturnItem, Category,
 )
 from .forms import (
     ProductForm,
@@ -248,21 +249,28 @@ def models_low_threshold():
 def product_list(request):
     status_filter = request.GET.get('status', '')
     q = request.GET.get('q', '')
+    category_slug = request.GET.get('category', '')
 
-    products = Product.objects.filter(is_active=True)
+    products = Product.objects.filter(is_active=True).select_related('category')
+    if category_slug:
+        products = products.filter(category__slug=category_slug)
     if q:
-        products = products.filter(
-            Q(name__icontains=q) | Q(sku__icontains=q)
-        )
+        products = products.filter(Q(name__icontains=q) | Q(sku__icontains=q))
     if status_filter == 'low':
         products = products.filter(stock__gt=0, stock__lte=10)
     elif status_filter == 'out':
         products = products.filter(stock=0)
 
+    categories = Category.objects.filter(is_active=True)
+    current_category = categories.filter(slug=category_slug).first() if category_slug else None
+
     paginator = Paginator(products, 24)
     page_obj = paginator.get_page(request.GET.get('page'))
 
-    context = {'products': page_obj, 'page_obj': page_obj, 'q': q, 'status_filter': status_filter}
+    context = {
+        'products': page_obj, 'page_obj': page_obj, 'q': q, 'status_filter': status_filter,
+        'categories': categories, 'current_category': current_category, 'category_slug': category_slug,
+    }
     return render(request, 'products/list.html', context)
 
 
@@ -326,6 +334,103 @@ def product_delete(request, pk):
         messages.success(request, "Tovar o'chirildi.")
         return redirect('product_list')
     return render(request, 'confirm_delete.html', {'object': product, 'type': 'Tovar'})
+
+
+@admin_required
+def product_import_excel(request):
+    """
+    Excel (.xlsx) fayl orqali ko'plab mahsulotni birdan yuklash.
+    Ustunlar tartibi (birinchi qator — sarlavha, e'tiborga olinmaydi):
+        A: SKU (majburiy, takrorlanmas)
+        B: Nomi (majburiy)
+        C: Narx (majburiy, son)
+        D: Miqdor (ixtiyoriy, standart 0)
+        E: Ogohlantirish chegarasi (ixtiyoriy, standart 10)
+        F: Tavsif (ixtiyoriy)
+
+    Agar SKU tizimda ALLAQACHON bo'lsa — o'sha mahsulot YANGILANADI
+    (narx/miqdor/nomi qayta yoziladi). Aks holda — yangi mahsulot yaratiladi.
+    """
+    result = None
+
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        if not excel_file:
+            messages.error(request, "Excel faylni tanlang.")
+        else:
+            try:
+                wb = openpyxl.load_workbook(excel_file, data_only=True)
+                ws = wb.active
+            except Exception:
+                messages.error(request, "Fayl o'qilmadi — bu haqiqiy .xlsx fayl ekanligiga ishonch hosil qiling.")
+                return render(request, 'products/import_form.html', {'result': result})
+
+            created_count = 0
+            updated_count = 0
+            errors = []
+
+            with transaction.atomic():
+                for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                    sku, name, price, stock, threshold, description = (list(row) + [None] * 6)[:6]
+
+                    if not sku and not name:
+                        continue  # bo'sh qator — o'tkazib yuboramiz
+
+                    row_errors = []
+                    if not sku:
+                        row_errors.append("SKU bo'sh")
+                    if not name:
+                        row_errors.append("Nomi bo'sh")
+                    try:
+                        price = int(price) if price is not None else None
+                        if price is None or price < 0:
+                            row_errors.append("Narx noto'g'ri")
+                    except (TypeError, ValueError):
+                        row_errors.append("Narx son emas")
+
+                    if row_errors:
+                        errors.append(f"{row_num}-qator: {', '.join(row_errors)}")
+                        continue
+
+                    try:
+                        stock_val = int(stock) if stock not in (None, '') else 0
+                    except (TypeError, ValueError):
+                        stock_val = 0
+                    try:
+                        threshold_val = int(threshold) if threshold not in (None, '') else 10
+                    except (TypeError, ValueError):
+                        threshold_val = 10
+
+                    product, created = Product.objects.update_or_create(
+                        sku=str(sku).strip(),
+                        defaults={
+                            'name': str(name).strip(),
+                            'price': price,
+                            'stock': stock_val,
+                            'low_stock_threshold': threshold_val,
+                            'description': str(description).strip() if description else '',
+                            'is_active': True,
+                        }
+                    )
+                    if created:
+                        created_count += 1
+                    else:
+                        updated_count += 1
+
+            result = {
+                'created': created_count,
+                'updated': updated_count,
+                'errors': errors,
+            }
+            if created_count or updated_count:
+                messages.success(
+                    request,
+                    f"Import tugadi — {created_count} ta yangi, {updated_count} ta yangilandi."
+                )
+            if errors:
+                messages.warning(request, f"{len(errors)} ta qatorda xato bor — pastda ko'ring.")
+
+    return render(request, 'products/import_form.html', {'result': result})
 
 
 # ════════════════════════════════════════════════

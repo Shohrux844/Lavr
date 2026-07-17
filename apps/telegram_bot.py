@@ -7,21 +7,58 @@ ISHLATISH UCHUN KERAK:
 2. Botni guruhga (yoki o'zingizning shaxsiy chatingizga) qo'shing.
 3. Guruh/chat ID sini aniqlang (pastdagi "CHAT ID OLISH" bo'limiga qarang).
 4. settings.py ga TELEGRAM_BOT_TOKEN va TELEGRAM_CHAT_ID qo'shing.
+
+BACKGROUND YUBORISH:
+Telegram API sekinlashsa yoki ishlamay qolsa, foydalanuvchi so'rovi
+kutib qolmasligi uchun notify_* funksiyalar `run_async()` yordamida
+alohida (daemon) thread'da ishga tushiriladi — natijada view darhol
+javob qaytaradi, Telegram xabari esa orqa fonda yuboriladi.
+
+Bu yechim Celery/Redis kabi qo'shimcha infratuzilma talab qilmaydi —
+kichik/o'rta yuklamali loyihalar uchun yetarli. Agar kelajakda yuklama
+juda oshsa (minutiga yuzlab so'rov), Celery'ga o'tish tavsiya etiladi.
 """
 import logging
+import threading
+
 import requests
 from django.conf import settings
+from django.db import close_old_connections
 
 logger = logging.getLogger(__name__)
 
 TELEGRAM_API_URL = "https://api.telegram.org/bot{token}/sendMessage"
 
 
+def run_async(func, *args, **kwargs):
+    """
+    Berilgan funksiyani alohida (daemon) thread'da ishga tushiradi —
+    chaqiruvchi kod (masalan Django view) natijani KUTMAYDI, darhol
+    davom etadi. Thread ichida ochilgan DB ulanishlari thread tugagach
+    tozalanadi (aks holda ulanishlar "osilib" qolishi mumkin).
+    """
+
+    def runner():
+        try:
+            func(*args, **kwargs)
+        except Exception:
+            logger.exception("Background vazifada kutilmagan xato: %s", func.__name__)
+        finally:
+            close_old_connections()
+
+    thread = threading.Thread(target=runner, daemon=True)
+    thread.start()
+    return thread
+
+
 def send_telegram_message(text, chat_id=None):
     """
-    Telegramga matnli xabar yuboradi.
+    Telegramga matnli xabar yuboradi (SINXRON — to'g'ridan-to'g'ri chaqiradi).
     Xato bo'lsa, dasturni to'xtatib qo'ymaydi — faqat log yozadi
     (chunki Telegram ishlamasa ham, asosiy tizim ishlashda davom etishi kerak).
+
+    Background (bloklamaydigan) yuborish uchun buni emas, pastdagi
+    notify_*_async() funksiyalaridan foydalaning.
     """
     token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
     target_chat_id = chat_id or getattr(settings, 'TELEGRAM_CHAT_ID', None)
@@ -49,10 +86,7 @@ def send_telegram_message(text, chat_id=None):
         return False
 
 
-def notify_new_point(visit):
-    """
-    Agent shartnomasiz (yangi) nuqtaga tashrif qilganda yuboriladigan xabar.
-    """
+def _notify_new_point_sync(visit):
     point = visit.point
     agent = visit.agent
     kind_label = point.get_kind_display()
@@ -78,11 +112,7 @@ def notify_new_point(visit):
     return sent
 
 
-def notify_visit_report(visit, debt_amount=0):
-    """
-    Agent shartnoma qilingan (mijoz bog'langan) nuqtaga tashrif qilganda
-    yuboriladigan xabar — qarzdorlik ma'lumoti bilan.
-    """
+def _notify_visit_report_sync(visit, debt_amount=0):
     point = visit.point
     agent = visit.agent
     cliente = point.cliente
@@ -114,10 +144,39 @@ def notify_visit_report(visit, debt_amount=0):
     return sent
 
 
+def notify_new_point(visit):
+    """SINXRON versiya — natijani darhol qaytaradi (masalan testlar uchun)."""
+    return _notify_new_point_sync(visit)
+
+
+def notify_visit_report(visit, debt_amount=0):
+    """SINXRON versiya — natijani darhol qaytaradi (masalan testlar uchun)."""
+    return _notify_visit_report_sync(visit, debt_amount=debt_amount)
+
+
+def notify_new_point_async(visit):
+    """
+    BACKGROUND versiya — view darhol javob qaytaradi, Telegram xabari
+    orqa fonda yuboriladi. Agent panelidagi GPS-kuzatuv (agent_check_nearby)
+    kabi tez javob talab qiladigan joylarda shuni ishlating.
+    """
+    run_async(_notify_new_point_sync, visit)
+
+
+def notify_visit_report_async(visit, debt_amount=0):
+    """BACKGROUND versiya — izoh yuqoridagi notify_new_point_async'da."""
+    run_async(_notify_visit_report_sync, visit, debt_amount=debt_amount)
+
+
 def notify_debt_reminder(cliente, debt_amount, days_overdue, oldest_order_number):
     """
     Mijozning uzoq vaqtdan beri to'lanmagan qarzi haqida adminga
     Telegram orqali eslatma yuboradi.
+
+    DIQQAT: bu funksiya SINXRON qoladi — chunki uni chaqiruvchi
+    (send_debt_reminders management command) allaqachon alohida,
+    cron orqali ishlaydigan background jarayon, foydalanuvchi so'rovi
+    ichida emas. Shuning uchun bu yerda run_async() shart emas.
     """
     text = (
         f"⏰ <b>Qarzdorlik eslatmasi</b>\n\n"

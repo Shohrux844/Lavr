@@ -26,6 +26,7 @@ urlpatterns = [
     path('products/<int:pk>/delete/', views.product_delete, name='product_delete'),
     path('products/export/excel/', exports.product_export_excel, name='product_export_excel'),
     path('products/export/pdf/', exports.product_export_pdf, name='product_export_pdf'),
+    path('products/import/', views.product_import_excel, name='product_import_excel'),
     path('stock-movements/', views.stock_movement_list, name='stock_movement_list'),
 
     # ─── Nakladnoylar ─────────────────────────────────

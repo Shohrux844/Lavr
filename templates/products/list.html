@@ -8,11 +8,32 @@
     <a href="{% url 'product_export_pdf' %}?{{ request.GET.urlencode }}" class="btn">
         <i class="ti ti-file-type-pdf"></i> PDF
     </a>
+    <a href="{% url 'product_import_excel' %}" class="btn">
+        <i class="ti ti-upload"></i> Import
+    </a>
     <a href="{% url 'product_create' %}" class="btn btn-primary"><i class="ti ti-plus"></i> Tovar qo'shish</a>
 {% endblock %}
 {% block content %}
+    <!-- Kategoriyalar -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:16px;">
+        <a href="{% url 'product_list' %}"
+           class="card" style="padding:16px; text-align:center; text-decoration:none; color:#1a1a1a;
+                {% if not current_category %}border-color:#534AB7; background:#EEEDFE;{% endif %}">
+            <i class="ti ti-apps" style="font-size:26px; color:#534AB7;"></i>
+            <div style="font-size:12.5px; font-weight:500; margin-top:8px;">Barchasi</div>
+        </a>
+        {% for cat in categories %}
+            <a href="?category={{ cat.slug }}"
+               class="card" style="padding:16px; text-align:center; text-decoration:none; color:#1a1a1a;
+                    {% if current_category == cat %}border-color:#534AB7; background:#EEEDFE;{% endif %}">
+                <i class="ti {{ cat.icon }}" style="font-size:26px; color:#534AB7;"></i>
+                <div style="font-size:12.5px; font-weight:500; margin-top:8px;">{{ cat.name }}</div>
+            </a>
+        {% endfor %}
+    </div>
     <div style="display:flex; gap:10px; margin-bottom:16px;">
         <form method="get" style="display:flex; gap:10px;">
+            <input type="hidden" name="category" value="{{ category_slug }}">
             <input type="text" name="q" value="{{ q }}" placeholder="Nom yoki SKU..." class="form-control"
                    style="width:220px;">
             <select name="status" class="form-control" style="width:160px;">
@@ -38,7 +59,8 @@
                     </div>
                 {% endif %}
                 <div style="padding:16px;">
-                    <div style="font-size:14px; font-weight:500; margin-bottom:2px;">{{ p.name }}</div>
+
+                    <div style="font-size:14px; font-weight:500; margin-bottom:2px;">{{ p.name }}{% if p.category %}<span class="badge badge-purple">{{ p.category.name }}</span>{% endif %}</div>
                     <div style="font-size:12px; color:#888; margin-bottom:10px;">{{ p.sku }}</div>
                     <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:10px;">
                         <span style="color:#888;">Narx:</span><span style="font-weight:500;">{{ p.price|floatformat:0 }} so'm</span>

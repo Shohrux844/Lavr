@@ -17,10 +17,8 @@ FILE = {'class': 'form-control'}
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'sku', 'image', 'description', 'price', 'stock', 'low_stock_threshold']
-        widgets = {
-            'description': forms.Textarea(attrs=TEXTAREA),
-        }
+        fields = ['category', 'name', 'sku', 'image', 'description', 'price', 'stock', 'low_stock_threshold']
+        widgets = {'description': forms.Textarea(attrs=TEXTAREA)}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

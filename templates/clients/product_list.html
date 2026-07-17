@@ -2,6 +2,22 @@
 {% block title %}Tovarlar{% endblock %}
 
 {% block content %}
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin-bottom:14px;">
+        <a href="{% url 'client_product_list' %}" class="card"
+           style="padding:12px; text-align:center; text-decoration:none; color:#1a1a1a;
+                   {% if not current_category %}border-color:#534AB7; background:#EEEDFE;{% endif %}">
+            <i class="ti ti-apps" style="font-size:22px; color:#534AB7;"></i>
+            <div style="font-size:11.5px; font-weight:500; margin-top:6px;">Barchasi</div>
+        </a>
+        {% for cat in categories %}
+            <a href="?category={{ cat.slug }}" class="card"
+               style="padding:12px; text-align:center; text-decoration:none; color:#1a1a1a;
+                       {% if current_category == cat %}border-color:#534AB7; background:#EEEDFE;{% endif %}">
+                <i class="ti {{ cat.icon }}" style="font-size:22px; color:#534AB7;"></i>
+                <div style="font-size:11.5px; font-weight:500; margin-top:6px;">{{ cat.name }}</div>
+            </a>
+        {% endfor %}
+    </div>
     <form method="get" style="display:flex; gap:8px; margin-bottom:12px;">
         <input type="text" name="q" value="{{ q }}" placeholder="Tovar nomi yoki SKU..." class="form-control">
         <button type="submit" class="btn btn-primary"><i class="ti ti-search"></i></button>

@@ -1,10 +1,21 @@
 import os
 from pathlib import Path
-from decouple import config, Csv
+from decouple import Config, RepositoryEnv, Csv
 
 from django.contrib import messages
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# ─── .env faylini ANIQ joydan o'qish (avtomatik qidirishga tayanmaymiz) ───
+ENV_PATH = BASE_DIR / '.env'
+
+if not ENV_PATH.exists():
+    raise FileNotFoundError(
+        f".env fayli topilmadi: {ENV_PATH}\n"
+        f"Uni manage.py bilan BIR XIL papkaga joylashtiring."
+    )
+
+config = Config(RepositoryEnv(str(ENV_PATH)))
 
 # ─── Maxfiy sozlamalar — endi .env fayldan o'qiladi ───────────
 SECRET_KEY = config('SECRET_KEY')
@@ -83,6 +94,7 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
 from django.contrib.messages import constants as messages_constants
+
 MESSAGE_TAGS = {
     messages_constants.DEBUG: 'info',
     messages_constants.INFO: 'info',
@@ -94,6 +106,20 @@ MESSAGE_TAGS = {
 # ─── Telegram — endi .env fayldan o'qiladi ─────────────────────
 TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
 TELEGRAM_CHAT_ID = config('TELEGRAM_CHAT_ID', default='')
+
+# ─── Email (parolni tiklash uchun) ─────────────────────────────
+# DEBUG=True bo'lsa — email konsolga chiqadi (test uchun qulay).
+# DEBUG=False (production) bo'lsa — haqiqiy SMTP orqali yuboriladi.
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+    EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+    EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+    EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+    EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+    DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 
 # ─── Production uchun qo'shimcha xavfsizlik (DEBUG=False bo'lganda ishlaydi) ───
 if not DEBUG:

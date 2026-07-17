@@ -4,7 +4,7 @@ from .models import (
     User, Product,
     Order, OrderItem, Payment, Salary,
     PointOfInterest, Visit, StockMovement,
-    OrderReturn, OrderReturnItem,
+    OrderReturn, OrderReturnItem, Category,
 )
 
 
@@ -16,6 +16,12 @@ class UserAdmin(admin.ModelAdmin):
         "last_name",
         "email",
     )
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'icon', 'order', 'is_active']
+    prepopulated_fields = {'slug': ('name',)}
 
 
 @admin.register(Product)

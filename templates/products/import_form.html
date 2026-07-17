@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Excel orqali import{% endblock %}
+{% block breadcrumb %}
+    <a href="{% url 'product_list' %}" style="color:#aaa;text-decoration:none;">Tovarlar</a> / Import
+{% endblock %}
+
+{% block content %}
+    <div style="max-width:640px;">
+        <div class="card" style="padding:24px; margin-bottom:16px;">
+            <h2 style="font-size:16px; font-weight:600; margin-bottom:12px;">
+                <i class="ti ti-file-spreadsheet"></i> Excel orqali tovar import qilish
+            </h2>
+
+            <div style="font-size:12.5px; color:#666; background:#F5F5F7; border-radius:8px; padding:12px 14px; margin-bottom:20px;">
+                <b>Ustunlar tartibi</b> (birinchi qator — sarlavha, o'qilmaydi):<br>
+                <b>A:</b> SKU (majburiy) &nbsp; <b>B:</b> Nomi (majburiy) &nbsp; <b>C:</b> Narx (majburiy)<br>
+                <b>D:</b> Miqdor (ixtiyoriy) &nbsp; <b>E:</b> Ogohlantirish chegarasi (ixtiyoriy) &nbsp; <b>F:</b>
+                Tavsif (ixtiyoriy)
+                <hr class="divider" style="margin:8px 0;">
+                Agar SKU tizimda <b>allaqachon bo'lsa</b> — mahsulot <b>yangilanadi</b>.
+                Aks holda — <b>yangi</b> mahsulot yaratiladi.
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Excel fayl (.xlsx)</label>
+                    <input type="file" name="excel_file" accept=".xlsx" class="form-control" required>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                    <button type="submit" class="btn btn-primary"><i class="ti ti-upload"></i> Import qilish</button>
+                    <a href="{% url 'product_list' %}" class="btn">Bekor qilish</a>
+                </div>
+            </form>
+        </div>
+
+        {% if result %}
+            <div class="card" style="padding:20px;">
+                <div style="font-size:14px; font-weight:600; margin-bottom:12px;">Natija</div>
+                <div style="display:flex; gap:12px; margin-bottom:16px;">
+                <span class="badge badge-green" style="font-size:12.5px; padding:5px 12px;">
+                    <i class="ti ti-plus"></i> {{ result.created }} ta yangi
+                </span>
+                    <span class="badge badge-blue" style="font-size:12.5px; padding:5px 12px;">
+                    <i class="ti ti-refresh"></i> {{ result.updated }} ta yangilandi
+                </span>
+                    {% if result.errors %}
+                        <span class="badge badge-red" style="font-size:12.5px; padding:5px 12px;">
+                        <i class="ti ti-alert-triangle"></i> {{ result.errors|length }} ta xato
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if result.errors %}
+                    <div style="font-size:12.5px; color:#888; margin-bottom:6px;">Xatoli qatorlar:</div>
+                    <div style="background:#FCEBEB; border-radius:8px; padding:12px 14px; font-size:12.5px; color:#A32D2D; max-height:200px; overflow-y:auto;">
+                        {% for err in result.errors %}
+                            <div>{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
