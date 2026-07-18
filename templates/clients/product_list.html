@@ -13,7 +13,11 @@
             <a href="?category={{ cat.slug }}" class="card"
                style="padding:12px; text-align:center; text-decoration:none; color:#1a1a1a;
                        {% if current_category == cat %}border-color:#534AB7; background:#EEEDFE;{% endif %}">
-                <i class="ti {{ cat.icon }}" style="font-size:22px; color:#534AB7;"></i>
+                {% if cat.image %}
+                    <img src="{{ cat.image.url }}" style="width:26px;height:26px;object-fit:cover;border-radius:6px;">
+                {% else %}
+                    <i class="ti {{ cat.icon }}" style="font-size:26px; color:#534AB7;"></i>
+                {% endif %}
                 <div style="font-size:11.5px; font-weight:500; margin-top:6px;">{{ cat.name }}</div>
             </a>
         {% endfor %}

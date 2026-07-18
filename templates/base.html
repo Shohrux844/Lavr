@@ -14,25 +14,49 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap"
+          rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
 
     <style>
+        :root {
+            --bg: #F6F6FB;
+            --surface: #FFFFFF;
+            --border: #EAEAF3;
+            --border-strong: #DEDEEC;
+            --text: #17171F;
+            --text-muted: #70708A;
+            --text-faint: #A3A3B8;
+            --brand: #534AB7;
+            --brand-dark: #3C3489;
+            --brand-light: #EEEDFE;
+            --brand-gradient: linear-gradient(135deg, #6E62E0 0%, #453C9E 100%);
+            --shadow-sm: 0 1px 2px rgba(23, 23, 31, .04);
+            --shadow-md: 0 2px 8px rgba(23, 23, 31, .06), 0 1px 2px rgba(23, 23, 31, .05);
+            --shadow-lg: 0 8px 24px rgba(23, 23, 31, .08);
+            --radius: 14px;
+        }
+
         * {
             box-sizing: border-box;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #F5F5F7;
-            color: #1a1a1a;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, .brand-font {
+            font-family: 'Sora', 'Inter', sans-serif;
         }
 
         .sidebar {
-            width: 230px;
+            width: 236px;
             min-height: 100vh;
-            background: #fff;
-            border-right: 1px solid #EBEBEB;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
             position: fixed;
             top: 0;
             left: 0;
@@ -42,17 +66,34 @@
             flex-direction: column;
         }
 
+        .brand-mark {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--brand-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+            font-family: 'Sora', sans-serif;
+            box-shadow: 0 4px 10px rgba(83, 74, 183, .28);
+            flex-shrink: 0;
+        }
+
         .main-content {
-            margin-left: 230px;
+            margin-left: 236px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
         .topbar {
-            height: 56px;
-            background: #fff;
-            border-bottom: 1px solid #EBEBEB;
+            height: 60px;
+            background: rgba(255, 255, 255, .85);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
             position: sticky;
             top: 0;
             z-index: 30;
@@ -62,24 +103,37 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 9px 18px;
+            padding: 9px 16px;
             font-size: 13.5px;
-            color: #555;
-            border-radius: 8px;
-            margin: 1px 8px;
-            transition: background .12s, color .12s;
+            color: var(--text-muted);
+            border-radius: 9px;
+            margin: 1px 10px;
+            position: relative;
+            transition: background .15s ease, color .15s ease, transform .15s ease;
             text-decoration: none;
         }
 
         .nav-link:hover {
-            background: #F5F5F7;
-            color: #1a1a1a;
+            background: #F5F5FA;
+            color: var(--text);
+            transform: translateX(2px);
         }
 
         .nav-link.active {
-            background: #EEEDFE;
-            color: #534AB7;
-            font-weight: 500;
+            background: var(--brand-light);
+            color: var(--brand);
+            font-weight: 600;
+        }
+
+        .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 8px;
+            bottom: 8px;
+            width: 3px;
+            border-radius: 3px;
+            background: var(--brand-gradient);
         }
 
         .nav-link i {
@@ -88,10 +142,11 @@
 
         .nav-section {
             font-size: 10.5px;
-            color: #aaa;
-            padding: 14px 18px 4px;
+            color: var(--text-faint);
+            font-weight: 600;
+            padding: 16px 18px 6px;
             text-transform: uppercase;
-            letter-spacing: .07em;
+            letter-spacing: .08em;
         }
 
         .badge {
@@ -124,8 +179,8 @@
         }
 
         .badge-purple {
-            background: #EEEDFE;
-            color: #534AB7;
+            background: var(--brand-light);
+            color: var(--brand);
         }
 
         .badge-gray {
@@ -134,9 +189,11 @@
         }
 
         .card {
-            background: #fff;
-            border: 1px solid #EBEBEB;
-            border-radius: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow .15s ease;
         }
 
         .table-base {
@@ -147,16 +204,19 @@
 
         .table-base th {
             text-align: left;
-            padding: 10px 12px;
-            color: #888;
-            font-weight: 500;
-            border-bottom: 1px solid #EBEBEB;
+            padding: 11px 14px;
+            color: var(--text-faint);
+            font-weight: 600;
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            border-bottom: 1px solid var(--border);
             white-space: nowrap;
         }
 
         .table-base td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #EBEBEB;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
             vertical-align: middle;
         }
 
@@ -165,36 +225,40 @@
         }
 
         .table-base tr:hover td {
-            background: #FAFAFA;
+            background: #FAFAFD;
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 7px 14px;
+            padding: 8px 15px;
             font-size: 13px;
-            border-radius: 8px;
-            border: 1px solid #DDDDE3;
-            background: #fff;
+            font-weight: 500;
+            border-radius: 9px;
+            border: 1px solid var(--border-strong);
+            background: var(--surface);
             cursor: pointer;
             color: #333;
             text-decoration: none;
-            transition: background .12s;
+            transition: all .15s ease;
         }
 
         .btn:hover {
-            background: #F5F5F7;
+            background: #F5F5FA;
+            border-color: #CACAE0;
         }
 
         .btn-primary {
-            background: #534AB7;
+            background: var(--brand-gradient);
             color: #fff;
-            border-color: #534AB7;
+            border: none;
+            box-shadow: 0 2px 8px rgba(83, 74, 183, .3);
         }
 
         .btn-primary:hover {
-            background: #3C3489;
+            filter: brightness(1.08);
+            box-shadow: 0 4px 12px rgba(83, 74, 183, .38);
         }
 
         .btn-danger {
@@ -208,25 +272,25 @@
         }
 
         .btn-sm {
-            padding: 5px 10px;
+            padding: 5px 11px;
             font-size: 12px;
         }
 
         .form-control {
             width: 100%;
-            padding: 8px 12px;
+            padding: 9px 12px;
             font-size: 13.5px;
-            border: 1px solid #DDDDE3;
-            border-radius: 8px;
-            background: #fff;
-            color: #1a1a1a;
+            border: 1px solid var(--border-strong);
+            border-radius: 9px;
+            background: var(--surface);
+            color: var(--text);
             outline: none;
-            transition: border .12s;
+            transition: border .12s, box-shadow .12s;
         }
 
         .form-control:focus {
-            border-color: #534AB7;
-            box-shadow: 0 0 0 3px #EEEDFE;
+            border-color: var(--brand);
+            box-shadow: 0 0 0 3px var(--brand-light);
         }
 
         .form-label {
@@ -251,12 +315,13 @@
 
         .alert {
             padding: 12px 16px;
-            border-radius: 8px;
+            border-radius: 11px;
             font-size: 13px;
             display: flex;
             align-items: flex-start;
             gap: 10px;
             margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
         }
 
         .alert-success {
@@ -284,13 +349,13 @@
         }
 
         .avatar {
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            background: #EEEDFE;
-            color: #534AB7;
+            background: var(--brand-gradient);
+            color: #fff;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -298,21 +363,38 @@
         }
 
         .stat-card {
-            background: #F5F5F7;
-            border-radius: 10px;
-            padding: 14px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--brand-gradient);
+            opacity: .8;
         }
 
         .stat-card .stat-label {
             font-size: 12px;
-            color: #888;
+            color: var(--text-muted);
             margin-bottom: 4px;
+            font-weight: 500;
         }
 
         .stat-card .stat-val {
-            font-size: 22px;
-            font-weight: 600;
-            color: #1a1a1a;
+            font-family: 'Sora', sans-serif;
+            font-size: 23px;
+            font-weight: 700;
+            color: var(--text);
         }
 
         .page-header {
@@ -323,8 +405,8 @@
         }
 
         .page-header h1 {
-            font-size: 17px;
-            font-weight: 600;
+            font-size: 18px;
+            font-weight: 700;
         }
 
         .form-error {
@@ -335,7 +417,7 @@
 
         .divider {
             border: none;
-            border-top: 1px solid #EBEBEB;
+            border-top: 1px solid var(--border);
             margin: 16px 0;
         }
     </style>
@@ -346,13 +428,12 @@
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
-    <div style="padding:16px 18px 12px; border-bottom:1px solid #EBEBEB;">
-    <span style="font-size:15px; font-weight:600;">
-      <span style="color:#534AB7;">●</span> SavdoTizim
-    </span>
+    <div style="padding:18px 18px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px;">
+        <div class="brand-mark">S</div>
+        <span class="brand-font" style="font-size:15px; font-weight:700;">SavdoTizim</span>
     </div>
 
-    <nav style="flex:1; padding:8px 0; overflow-y:auto;">
+    <nav style="flex:1; padding:10px 0; overflow-y:auto;">
         <div class="nav-section">Asosiy</div>
         <a href="{% url 'dashboard' %}"
            class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
@@ -387,21 +468,6 @@
             <i class="ti ti-history"></i> Sklad tarixi
         </a>
 
-
-        {#        <div class="nav-section">Maydon ishi</div>#}
-        {#        <a href="{% url 'point_map' %}"#}
-        {#           class="nav-link {% if request.resolver_match.url_name == 'point_map' %}active{% endif %}">#}
-        {#            <i class="ti ti-map"></i> Xarita#}
-        {#        </a>#}
-        {#        <a href="{% url 'point_list' %}"#}
-        {#           class="nav-link {% if request.resolver_match.url_name in 'point_list,point_create,point_update' %}active{% endif %}">#}
-        {#            <i class="ti ti-building-warehouse"></i> AZS / Do'konlar#}
-        {#        </a>#}
-        {#        <a href="{% url 'visit_list' %}"#}
-        {#           class="nav-link {% if 'visit' in request.resolver_match.url_name %}active{% endif %}">#}
-        {#            <i class="ti ti-map-pin-check"></i> Tashriflar#}
-        {#        </a>#}
-
         <div class="nav-section">Agentlar</div>
         <a href="{% url 'agent_list' %}"
            class="nav-link {% if request.resolver_match.url_name in 'agent_list,agent_detail' %}active{% endif %}">
@@ -417,15 +483,18 @@
         </a>
     </nav>
 
-    <div style="padding:12px 18px; border-top:1px solid #EBEBEB;">
+    <div style="padding:14px 18px; border-top:1px solid var(--border);">
         {% if user.is_authenticated %}
             <div style="display:flex; align-items:center; gap:10px;">
                 <div class="avatar">{{ user.username|slice:":2"|upper }}</div>
                 <div>
-                    <div style="font-size:13px; font-weight:500;">{{ user.get_full_name|default:user.username }}</div>
+                    <div style="font-size:13px; font-weight:600;">{{ user.get_full_name|default:user.username }}</div>
                     <form method="post" action="{% url 'logout' %}">
                         {% csrf_token %}
-                        <button type="submit">Chiqish</button>
+                        <button type="submit"
+                                style="font-size:12px; color:var(--text-muted); background:none; border:none; cursor:pointer; padding:0;">
+                            Chiqish
+                        </button>
                     </form>
                 </div>
             </div>
@@ -436,7 +505,7 @@
 <!-- MAIN -->
 <div class="main-content">
     <header class="topbar" style="display:flex; align-items:center; justify-content:space-between; padding:0 24px;">
-        <nav style="font-size:13px; color:#888;">
+        <nav style="font-size:13px; color:var(--text-muted);">
             {% block breadcrumb %}{% endblock %}
         </nav>
         <div style="display:flex; align-items:center; gap:10px;">
@@ -444,7 +513,7 @@
         </div>
     </header>
 
-    <div style="padding:0 24px; margin-top:12px;">
+    <div style="padding:0 24px; margin-top:14px;">
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }}" role="alert">
                 {% if message.tags == 'success' %}

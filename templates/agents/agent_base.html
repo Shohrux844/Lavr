@@ -5,9 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>{% block title %}Agent{% endblock %} — SavdoTizim</title>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap"
+          rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
     <style>
+        :root {
+            --bg: #F6F6FB;
+            --surface: #FFFFFF;
+            --border: #EAEAF3;
+            --border-strong: #DEDEEC;
+            --text: #17171F;
+            --text-muted: #70708A;
+            --text-faint: #A3A3B8;
+            --brand: #534AB7;
+            --brand-dark: #3C3489;
+            --brand-light: #EEEDFE;
+            --brand-gradient: linear-gradient(135deg, #6E62E0 0%, #453C9E 100%);
+            --shadow-sm: 0 1px 2px rgba(23, 23, 31, .04);
+            --radius: 14px;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -16,15 +33,20 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #F5F5F7;
-            color: #1a1a1a;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, .brand-font {
+            font-family: 'Sora', 'Inter', sans-serif;
         }
 
         .sidebar {
-            width: 220px;
+            width: 226px;
             min-height: 100vh;
-            background: #fff;
-            border-right: 1px solid #EBEBEB;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
             position: fixed;
             top: 0;
             left: 0;
@@ -34,17 +56,34 @@
             flex-direction: column;
         }
 
+        .brand-mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: var(--brand-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 13px;
+            font-family: 'Sora', sans-serif;
+            box-shadow: 0 4px 10px rgba(83, 74, 183, .28);
+            flex-shrink: 0;
+        }
+
         .main-content {
-            margin-left: 220px;
+            margin-left: 226px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
         .topbar {
-            height: 52px;
-            background: #fff;
-            border-bottom: 1px solid #EBEBEB;
+            height: 56px;
+            background: rgba(255, 255, 255, .85);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
             position: sticky;
             top: 0;
             z-index: 30;
@@ -60,55 +99,81 @@
             gap: 10px;
             padding: 9px 16px;
             font-size: 13.5px;
-            color: #555;
-            border-radius: 8px;
-            margin: 1px 8px;
-            transition: background .12s, color .12s;
+            color: var(--text-muted);
+            border-radius: 9px;
+            margin: 1px 10px;
+            position: relative;
+            transition: background .15s ease, color .15s ease, transform .15s ease;
             text-decoration: none;
         }
 
         .nav-link:hover {
-            background: #F5F5F7;
-            color: #1a1a1a;
+            background: #F5F5FA;
+            color: var(--text);
+            transform: translateX(2px);
         }
 
         .nav-link.active {
-            background: #EEEDFE;
-            color: #534AB7;
-            font-weight: 500;
+            background: var(--brand-light);
+            color: var(--brand);
+            font-weight: 600;
+        }
+
+        .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 8px;
+            bottom: 8px;
+            width: 3px;
+            border-radius: 3px;
+            background: var(--brand-gradient);
         }
 
         .nav-link i {
             font-size: 17px;
         }
 
-        .main {
-            padding: 24px;
-            flex: 1;
-        }
-
         .card {
-            background: #fff;
-            border: 1px solid #EBEBEB;
-            border-radius: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
         }
 
         .stat-card {
-            background: #F5F5F7;
-            border-radius: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             padding: 14px 16px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--brand-gradient);
+            opacity: .8;
         }
 
         .stat-label {
             font-size: 12px;
-            color: #888;
+            color: var(--text-muted);
             margin-bottom: 4px;
+            font-weight: 500;
         }
 
         .stat-val {
-            font-size: 22px;
-            font-weight: 600;
-            color: #1a1a1a;
+            font-family: 'Sora', sans-serif;
+            font-size: 21px;
+            font-weight: 700;
+            color: var(--text);
         }
 
         .badge {
@@ -141,8 +206,8 @@
         }
 
         .badge-purple {
-            background: #EEEDFE;
-            color: #534AB7;
+            background: var(--brand-light);
+            color: var(--brand);
         }
 
         .badge-gray {
@@ -154,29 +219,32 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 7px 14px;
+            padding: 8px 14px;
             font-size: 13px;
-            border-radius: 8px;
-            border: 1px solid #DDDDE3;
-            background: #fff;
+            font-weight: 500;
+            border-radius: 9px;
+            border: 1px solid var(--border-strong);
+            background: var(--surface);
             cursor: pointer;
             color: #333;
             text-decoration: none;
-            transition: background .12s;
+            transition: all .15s ease;
         }
 
         .btn:hover {
-            background: #F5F5F7;
+            background: #F5F5FA;
+            border-color: #CACAE0;
         }
 
         .btn-primary {
-            background: #534AB7;
+            background: var(--brand-gradient);
             color: #fff;
-            border-color: #534AB7;
+            border: none;
+            box-shadow: 0 2px 8px rgba(83, 74, 183, .3);
         }
 
         .btn-primary:hover {
-            background: #3C3489;
+            filter: brightness(1.08);
         }
 
         .btn-danger {
@@ -194,17 +262,17 @@
             width: 100%;
             padding: 9px 12px;
             font-size: 13.5px;
-            border: 1px solid #DDDDE3;
-            border-radius: 8px;
-            background: #fff;
-            color: #1a1a1a;
+            border: 1px solid var(--border-strong);
+            border-radius: 9px;
+            background: var(--surface);
+            color: var(--text);
             outline: none;
-            transition: border .12s;
+            transition: border .12s, box-shadow .12s;
         }
 
         .form-control:focus {
-            border-color: #534AB7;
-            box-shadow: 0 0 0 3px #EEEDFE;
+            border-color: var(--brand);
+            box-shadow: 0 0 0 3px var(--brand-light);
         }
 
         select.form-control {
@@ -235,7 +303,7 @@
 
         .divider {
             border: none;
-            border-top: 1px solid #EBEBEB;
+            border-top: 1px solid var(--border);
             margin: 12px 0;
         }
 
@@ -248,15 +316,18 @@
         .table-base th {
             text-align: left;
             padding: 10px 12px;
-            color: #888;
-            font-weight: 500;
-            border-bottom: 1px solid #EBEBEB;
+            color: var(--text-faint);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            border-bottom: 1px solid var(--border);
             white-space: nowrap;
         }
 
         .table-base td {
             padding: 10px 12px;
-            border-bottom: 1px solid #EBEBEB;
+            border-bottom: 1px solid var(--border);
             vertical-align: middle;
         }
 
@@ -265,17 +336,17 @@
         }
 
         .table-base tr:hover td {
-            background: #FAFAFA;
+            background: #FAFAFD;
         }
 
         .avatar {
             width: 30px;
             height: 30px;
             border-radius: 50%;
-            background: #EEEDFE;
-            color: #534AB7;
+            background: var(--brand-gradient);
+            color: #fff;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -284,12 +355,13 @@
 
         .alert {
             padding: 10px 14px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 13px;
             display: flex;
             align-items: flex-start;
             gap: 8px;
             margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
         }
 
         .alert-success {
@@ -315,18 +387,23 @@
             color: #185FA5;
             border: 1px solid #B5D4F4;
         }
+
+        .main {
+            padding: 22px;
+            flex: 1;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
-    <div style="padding:16px 18px 12px; border-bottom:1px solid #EBEBEB;">
-        <span style="font-size:15px; font-weight:600;">
-            <span style="color:#534AB7;">●</span> SavdoTizim
-        </span>
-        <div style="font-size:11px; color:#aaa; margin-top:2px;">Agent panel</div>
+    <div style="padding:16px 18px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px;">
+        <div class="brand-mark">S</div>
+        <div>
+            <span class="brand-font" style="font-size:14.5px; font-weight:700;">SavdoTizim</span>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:1px;">Agent panel</div>
+        </div>
     </div>
 
     <nav style="flex:1; padding:8px 0; overflow-y:auto;">
@@ -352,15 +429,18 @@
         </a>
     </nav>
 
-    <div style="padding:12px 18px; border-top:1px solid #EBEBEB;">
+    <div style="padding:12px 18px; border-top:1px solid var(--border);">
         {% if request.user.is_authenticated %}
             <div style="display:flex; align-items:center; gap:10px;">
                 <div class="avatar">{{ request.user.username|slice:":2"|upper }}</div>
                 <div style="flex:1;">
-                    <div style="font-size:12.5px; font-weight:500;">{{ request.user.agent_profile }}</div>
+                    <div style="font-size:12.5px; font-weight:600;">{{ request.user.agent_profile }}</div>
                     <form method="post" action="{% url 'logout' %}">
                         {% csrf_token %}
-                        <button type="submit">Chiqish</button>
+                        <button type="submit"
+                                style="font-size:11.5px; color:var(--text-muted); background:none; border:none; cursor:pointer; padding:0;">
+                            Chiqish
+                        </button>
                     </form>
                 </div>
             </div>
@@ -368,10 +448,9 @@
     </div>
 </aside>
 
-<!-- MAIN -->
 <div class="main-content">
     <header class="topbar">
-        <nav style="font-size:13px; color:#888;">
+        <nav style="font-size:13px; color:var(--text-muted);">
             {% block breadcrumb %}{% endblock %}
         </nav>
         <div style="display:flex; align-items:center; gap:10px;">

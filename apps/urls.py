@@ -18,6 +18,12 @@ urlpatterns = [
     path('clients/export/excel/', exports.cliente_export_excel, name='cliente_export_excel'),
     path('clients/export/pdf/', exports.cliente_export_pdf, name='cliente_export_pdf'),
 
+    # ─── Kategoriyalar ─────────────────────────────────
+    path('categories/', views.category_list, name='category_list'),
+    path('categories/create/', views.category_create, name='category_create'),
+    path('categories/<int:pk>/edit/', views.category_update, name='category_update'),
+    path('categories/<int:pk>/delete/', views.category_delete, name='category_delete'),
+
     # ─── Tovarlar (Sklad) ─────────────────────────────
     path('products/', views.product_list, name='product_list'),
     path('products/create/', views.product_create, name='product_create'),

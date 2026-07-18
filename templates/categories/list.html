@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Kategoriyalar{% endblock %}
+{% block breadcrumb %}
+    <a href="{% url 'product_list' %}" style="color:#aaa;text-decoration:none;">Tovarlar</a> / Kategoriyalar
+{% endblock %}
+{% block topbar_actions %}
+    <a href="{% url 'category_create' %}" class="btn btn-primary"><i class="ti ti-plus"></i> Kategoriya qo'shish</a>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <table class="table-base">
+            <thead>
+            <tr>
+                <th>Rasm</th>
+                <th>Nomi</th>
+                <th>Slug</th>
+                <th>Tartib</th>
+                <th>Holat</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for cat in categories %}
+                <tr>
+                    <td>
+                        {% if cat.image %}
+                            <img src="{{ cat.image.url }}"
+                                 style="width:36px;height:36px;object-fit:cover;border-radius:8px;">
+                        {% else %}
+                            <div style="width:36px;height:36px;border-radius:8px;background:#F5F5F7;display:flex;align-items:center;justify-content:center;">
+                                <i class="ti {{ cat.icon }}" style="color:#534AB7;"></i>
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight:500;">{{ cat.name }}</td>
+                    <td style="color:#888;">{{ cat.slug }}</td>
+                    <td>{{ cat.order }}</td>
+                    <td>
+                        {% if cat.is_active %}<span class="badge badge-green">Faol</span>
+                        {% else %}<span class="badge badge-red">Nofaol</span>{% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:4px;">
+                            <a href="{% url 'category_update' cat.pk %}" class="btn btn-sm"><i
+                                    class="ti ti-edit"></i></a>
+                            <a href="{% url 'category_delete' cat.pk %}" class="btn btn-sm btn-danger"><i
+                                    class="ti ti-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center;color:#aaa;padding:32px;">Kategoriya yo'q</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

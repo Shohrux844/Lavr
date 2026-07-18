@@ -5,13 +5,29 @@ from agent.models import AgentBalance
 from client.models import Cliente
 from .models import (
     Product, Order, OrderItem, Payment, Salary,
-    PointOfInterest, Visit,
+    PointOfInterest, Visit, Category,
 )
 
 ATTRS = {'class': 'form-control'}
 TEXTAREA = {'class': 'form-control', 'rows': 3}
 DATE = {'class': 'form-control', 'type': 'date'}
 FILE = {'class': 'form-control'}
+
+
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name', 'icon', 'image', 'order', 'is_active']
+        labels = {
+            'name': 'Nomi', 'icon': "Tabler icon klassi (masalan: ti-star)",
+            'image': 'Rasm (ixtiyoriy)', 'order': "Tartib raqami", 'is_active': 'Faol',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, f in self.fields.items():
+            if name not in ('image', 'is_active'):
+                f.widget.attrs.update(ATTRS)
 
 
 class ProductForm(forms.ModelForm):

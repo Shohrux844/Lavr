@@ -21,7 +21,7 @@ from .models import (
 from .forms import (
     ProductForm,
     OrderForm, OrderUpdateForm, OrderItemFormSet, PaymentForm, SalaryForm,
-    PointOfInterestForm, VisitForm,
+    PointOfInterestForm, VisitForm, CategoryForm,
 )
 from .decorators import admin_required
 from .stock import record_stock_movement
@@ -239,6 +239,54 @@ def dashboard(request):
 
 def models_low_threshold():
     return 10
+
+
+# ════════════════════════════════════════════════
+# CATEGORY (Kategoriya)
+# ════════════════════════════════════════════════
+
+@admin_required
+def category_list(request):
+    categories = Category.objects.all()
+    return render(request, 'categories/list.html', {'categories': categories})
+
+
+@admin_required
+def category_create(request):
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Kategoriya qo'shildi.")
+            return redirect('category_list')
+    else:
+        form = CategoryForm()
+    return render(request, 'categories/form.html', {'form': form, 'title': "Yangi kategoriya"})
+
+
+@admin_required
+def category_update(request, pk):
+    category = get_object_or_404(Category, pk=pk)
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, request.FILES, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Kategoriya yangilandi.")
+            return redirect('category_list')
+    else:
+        form = CategoryForm(instance=category)
+    return render(request, 'categories/form.html', {'form': form, 'title': "Kategoriyani tahrirlash"})
+
+
+@admin_required
+def category_delete(request, pk):
+    category = get_object_or_404(Category, pk=pk)
+    if request.method == 'POST':
+        category.is_active = False
+        category.save()
+        messages.success(request, "Kategoriya o'chirildi.")
+        return redirect('category_list')
+    return render(request, 'confirm_delete.html', {'object': category, 'type': 'Kategoriya'})
 
 
 # ════════════════════════════════════════════════

@@ -37,13 +37,16 @@ class Category(Model):
     name = CharField(max_length=100)
     slug = SlugField(max_length=100, unique=True, blank=True)
     icon = CharField(max_length=50, default='ti-package',
-                     help_text="Tabler icon klassi, masalan: ti-star, ti-flask, ti-car")
+                      help_text="Agar rasm yuklanmasa, shu icon ko'rsatiladi")
+    image = ImageField(upload_to='categories/', null=True, blank=True)
     order = PositiveIntegerField(default=0)
     is_active = BooleanField(default=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
+        if self.image and image_field_changed(Category, self.pk, 'image', self.image):
+            compress_image(self.image, max_dimension=600)
         super().save(*args, **kwargs)
 
     def __str__(self):
